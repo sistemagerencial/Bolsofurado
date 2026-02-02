@@ -1,5 +1,6 @@
 import { lazy } from 'react';
 import { RouteObject, Navigate } from 'react-router-dom';
+import ProtectedRoute from '../lib/ProtectedRoute';
 
 const HomePage = lazy(() => import('../pages/home/page'));
 const ReceitasPage = lazy(() => import('../pages/receitas/page'));
@@ -15,7 +16,11 @@ const LoginPage = lazy(() => import('../pages/login/page'));
 const routes: RouteObject[] = [
   {
     path: '/',
-    element: <HomePage />,
+    element: (
+      <ProtectedRoute>
+        <HomePage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/dashboard',
@@ -23,31 +28,59 @@ const routes: RouteObject[] = [
   },
   {
     path: '/receitas',
-    element: <ReceitasPage />,
+    element: (
+      <ProtectedRoute>
+        <ReceitasPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/despesas',
-    element: <DespesasPage />,
+    element: (
+      <ProtectedRoute>
+        <DespesasPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/investimentos',
-    element: <InvestimentosPage />,
+    element: (
+      <ProtectedRoute>
+        <InvestimentosPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/planejamento',
-    element: <PlanejamentoPage />,
+    element: (
+      <ProtectedRoute>
+        <PlanejamentoPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/relatorios',
-    element: <RelatoriosPage />,
+    element: (
+      <ProtectedRoute>
+        <RelatoriosPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/patrimonios',
-    element: <PatrimoniosPage />,
+    element: (
+      <ProtectedRoute>
+        <PatrimoniosPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/calculadoras',
-    element: <CalculadorasPage />,
+    element: (
+      <ProtectedRoute>
+        <CalculadorasPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/login',

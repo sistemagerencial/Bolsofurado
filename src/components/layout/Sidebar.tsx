@@ -80,14 +80,7 @@ export default function Sidebar() {
             />
           </div>
 
-          {/* Desktop hamburger near logo (visible on lg+) */}
-          <button
-            onClick={toggleSidebar}
-            className="hidden lg:flex absolute right-3 top-3 w-10 h-10 bg-white/5 hover:bg-white/10 rounded-md items-center justify-center transition-all"
-            aria-label="Abrir/fechar menu"
-          >
-            <i className="ri-menu-line text-white text-lg"></i>
-          </button>
+          {/* Desktop hamburger near logo (moved out to avoid overlapping when collapsed) */}
         </div>
 
         {/* Menu de Navegação */}
@@ -140,6 +133,19 @@ export default function Sidebar() {
           </div>
         </div>
       </aside>
+
+      {/* Desktop hamburger (fixed) - positioned next to the sidebar to avoid overlapping the logo */}
+      <button
+        onClick={toggleSidebar}
+        aria-label="Abrir/fechar menu"
+        className="hidden lg:flex fixed top-4 w-10 h-10 bg-white/5 hover:bg-white/10 rounded-md items-center justify-center transition-all shadow z-[60]"
+        style={{
+          // compute left based on sidebar state (w-64 == 256px, w-20 == 80px)
+          left: `${isOpen ? 256 - 12 : 80 - 12}px`
+        }}
+      >
+        <i className="ri-menu-line text-white text-lg"></i>
+      </button>
 
       {/* Mobile hamburger - visible on small screens (right side) */}
       <button
