@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
+import { supabase } from '../../lib/supabaseClient';
 
 interface Patrimonio {
   id: number;
@@ -12,12 +13,32 @@ interface Patrimonio {
 
 export default function PatrimoniosPage() {
   const [showModal, setShowModal] = useState(false);
-  const [patrimonios, setPatrimonios] = useState<Patrimonio[]>([
-    { id: 1, nome: 'Apartamento Centro', tipo: 'Imóvel', valor: 450000, dataReferencia: '2024-01-15', observacoes: 'Apartamento 3 quartos' },
-    { id: 2, nome: 'Honda Civic 2022', tipo: 'Veículo', valor: 125000, dataReferencia: '2024-01-15' },
-    { id: 3, nome: 'Investimentos CDB', tipo: 'Investimentos', valor: 85000, dataReferencia: '2024-01-15' },
-    { id: 4, nome: 'Conta Corrente', tipo: 'Caixa', valor: 15000, dataReferencia: '2024-01-15' },
-  ]);
+  const [patrimonios, setPatrimonios] = useState<Patrimonio[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const { data } = await supabase.from('portfolio_assets').select('*');
+        if (!mounted) return;
+        if (data && Array.isArray(data)) {
+          const mapped = data.map((d: any, i: number) => ({
+            id: i + 1,
+            nome: d.name || d.code || 'Ativo',
+            tipo: d.type || 'Investimentos',
+            valor: Number(d.current_value || d.invested || 0),
+            dataReferencia: d.created_at || new Date().toISOString(),
+            observacoes: d.status || ''
+          }));
+          setPatrimonios(mapped);
+        }
+      } catch (err) {
+        // ignore
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   const [formData, setFormData] = useState({
     nome: '',

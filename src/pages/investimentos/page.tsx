@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
-import { portfolioAssets, tradeHistory, monthlyEvolution } from '../../mocks/investmentData';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function InvestimentosPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'portfolio' | 'trade' | 'reports'>('overview');
@@ -12,19 +12,43 @@ export default function InvestimentosPage() {
   const [tradeResultType, setTradeResultType] = useState<'gain' | 'loss'>('gain');
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
+  const [portfolioAssets, setPortfolioAssets] = useState<any[]>([]);
+  const [tradeHistory, setTradeHistory] = useState<any[]>([]);
+  const [monthlyEvolution, setMonthlyEvolution] = useState<any[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const { data: assets } = await supabase.from('portfolio_assets').select('*');
+        const { data: trades } = await supabase.from('trade_history').select('*');
+        const { data: months } = await supabase.from('monthly_metrics').select('*');
+        if (!mounted) return;
+        setPortfolioAssets(Array.isArray(assets) ? assets : []);
+        setTradeHistory(Array.isArray(trades) ? trades : []);
+        setMonthlyEvolution(Array.isArray(months) ? months : []);
+      } catch (err) {
+        // ignore
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
+
   // Cálculos
-  const totalInvested = portfolioAssets.reduce((sum, asset) => sum + asset.invested, 0);
-  const totalCurrent = portfolioAssets.reduce((sum, asset) => sum + asset.currentValue, 0);
+  const totalInvested = portfolioAssets.reduce((sum, asset) => sum + Number(asset.invested || 0), 0);
+  const totalCurrent = portfolioAssets.reduce((sum, asset) => sum + Number(asset.current_value || asset.currentValue || 0), 0);
   const totalProfit = totalCurrent - totalInvested;
-  const totalProfitability = ((totalProfit / totalInvested) * 100).toFixed(2);
+  const totalProfitability = totalInvested ? ((totalProfit / totalInvested) * 100).toFixed(2) : '0.00';
 
+  const todayStr = new Date().toISOString().slice(0,10);
   const tradeResultDay = tradeHistory
-    .filter(t => t.date === '2025-01-15')
-    .reduce((sum, t) => sum + t.result, 0);
+    .filter((t: any) => (t.date || '').toString() === todayStr)
+    .reduce((sum: number, t: any) => sum + Number(t.result || 0), 0);
 
-  const tradeResultMonth = tradeHistory.reduce((sum, t) => sum + t.result, 0);
+  const tradeResultMonth = tradeHistory.reduce((sum: number, t: any) => sum + Number(t.result || 0), 0);
 
-  const groupedAssets = portfolioAssets.reduce((acc: any, asset) => {
+  const groupedAssets = portfolioAssets.reduce((acc: any, asset: any) => {
     if (!acc[asset.type]) acc[asset.type] = [];
     acc[asset.type].push(asset);
     return acc;

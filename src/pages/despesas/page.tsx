@@ -1,7 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
-import { expenses } from '../../mocks/financialData';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function DespesasPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,13 +31,32 @@ export default function DespesasPage() {
   };
 
   // ---------- Data Calculations ----------
-  const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  // Count of expenses for the current month (June 2024 in the mock)
-  const thisMonthExpenses = expenses.filter(exp => exp.date.startsWith('2024-06')).length;
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [thisMonthExpenses, setThisMonthExpenses] = useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const { data } = await supabase.from('expenses').select('*');
+        if (!mounted) return;
+        const list = Array.isArray(data) ? data : [];
+        setExpenses(list);
+        setTotalExpenses(list.reduce((s: number, e: any) => s + Number(e.amount || 0), 0));
+        const month = new Date().toISOString().slice(0,7);
+        setThisMonthExpenses(list.filter((e: any) => (e.date||'').toString().startsWith(month)).length);
+      } catch (err) {
+        // ignore
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   const filteredExpenses = expenses.filter(expense =>
-    expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expense.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (expense.description || '').toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (expense.category || '').toString().toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getCategoryColor = (category: string) => {

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
-import { planningData } from '../../mocks/financialData';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function PlanejamentoPage() {
   const [selectedMonth, setSelectedMonth] = useState('2024-06');
@@ -24,9 +24,31 @@ export default function PlanejamentoPage() {
     return 'Estourado';
   };
 
-  const totalBudget = planningData.reduce((sum, item) => sum + item.budget, 0);
-  const totalSpent = planningData.reduce((sum, item) => sum + item.spent, 0);
-  const totalDifference = totalBudget - totalSpent;
+  const [planningData, setPlanningData] = useState<any[]>([]);
+  const [totalBudget, setTotalBudget] = useState(0);
+  const [totalSpent, setTotalSpent] = useState(0);
+  const [totalDifference, setTotalDifference] = useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const { data } = await supabase.from('planning').select('*');
+        if (!mounted) return;
+        const list = Array.isArray(data) ? data : [];
+        setPlanningData(list as any[]);
+        const budget = list.reduce((s: number, it: any) => s + Number(it.budget || 0), 0);
+        const spent = list.reduce((s: number, it: any) => s + Number(it.spent || 0), 0);
+        setTotalBudget(budget);
+        setTotalSpent(spent);
+        setTotalDifference(budget - spent);
+      } catch (err) {
+        // ignore
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <MainLayout>
@@ -202,18 +224,20 @@ export default function PlanejamentoPage() {
             <div className="flex-1">
               <h3 className="text-lg font-bold text-[#F9FAFB] mb-2">Alertas Inteligentes</h3>
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#FACC15]"></div>
-                  <span>Marketing atingiu 92.5% da meta mensal</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#FACC15]"></div>
-                  <span>Pessoal está próximo do limite (90%)</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#FACC15]"></div>
-                  <span>Tecnologia atingiu 89.5% do orçamento</span>
-                </div>
+                {planningData.length === 0 && (
+                  <div className="text-sm text-[#9CA3AF]">Nenhum alerta no momento.</div>
+                )}
+                {planningData.map((item) => {
+                  const percent = Number(item.percentage || 0);
+                  if (percent < 70) return null;
+                  const color = percent >= 90 ? '#FACC15' : '#FACC15';
+                  return (
+                    <div key={item.id || item.category} className="flex items-center gap-2 text-sm text-[#9CA3AF]">
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }}></div>
+                      <span>{item.category} atingiu {percent}% da meta mensal</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

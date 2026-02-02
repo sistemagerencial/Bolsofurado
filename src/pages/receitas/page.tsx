@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
-import { revenues } from '../../mocks/financialData';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function ReceitasPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,15 +27,36 @@ export default function ReceitasPage() {
     return date.toLocaleDateString('pt-BR');
   };
 
-  const totalRevenues = revenues.reduce((sum, rev) => sum + rev.amount, 0);
-  // Corrigido: o cálculo do total de receitas do mês deve somar os valores, não contar itens.
-  const thisMonthRevenues = revenues
-    .filter(rev => rev.date.startsWith('2024-06'))
-    .reduce((sum, rev) => sum + rev.amount, 0);
+  const [revenues, setRevenues] = useState<any[]>([]);
+  const [totalRevenues, setTotalRevenues] = useState(0);
+  const [thisMonthRevenues, setThisMonthRevenues] = useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const { data } = await supabase.from('revenues').select('*');
+        if (!mounted) return;
+        const list = Array.isArray(data) ? data : [];
+        setRevenues(list as any[]);
+        const total = list.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+        setTotalRevenues(total);
+        const month = new Date().toISOString().slice(0,7); // current YYYY-MM
+        const thisMonthTotal = list
+          .filter((r: any) => (r.date || '').toString().startsWith(month))
+          .reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+        setThisMonthRevenues(thisMonthTotal);
+      } catch (err) {
+        // ignore
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   const filteredRevenues = revenues.filter(revenue =>
-    revenue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    revenue.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (revenue.description || '').toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (revenue.category || '').toString().toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getCategoryColor = (category: string) => {

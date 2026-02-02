@@ -66,7 +66,7 @@ export default function Sidebar() {
       >
         
         {/* Logo */}
-        <div className={`p-4 border-b border-white/5 bg-gradient-to-br from-[#7C3AED]/20 via-[#EC4899]/10 to-[#7C3AED]/20 transition-all duration-300 ${
+        <div className={`relative p-4 border-b border-white/5 bg-gradient-to-br from-[#7C3AED]/20 via-[#EC4899]/10 to-[#7C3AED]/20 transition-all duration-300 ${
           isOpen ? '' : 'lg:p-2'
         }`}>
           <div className="flex items-center justify-center">
@@ -79,6 +79,15 @@ export default function Sidebar() {
               style={{ filter: 'brightness(0) invert(1)' }}
             />
           </div>
+
+          {/* Desktop hamburger near logo (visible on lg+) */}
+          <button
+            onClick={toggleSidebar}
+            className="hidden lg:flex absolute right-3 top-3 w-10 h-10 bg-white/5 hover:bg-white/10 rounded-md items-center justify-center transition-all"
+            aria-label="Abrir/fechar menu"
+          >
+            <i className="ri-menu-line text-white text-lg"></i>
+          </button>
         </div>
 
         {/* Menu de Navegação */}
@@ -132,10 +141,11 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Botão hambúrguer - SEMPRE VISÍVEL */}
+      {/* Mobile hamburger - visible on small screens (right side) */}
       <button
         onClick={toggleSidebar}
-        className="fixed top-4 right-4 w-12 h-12 bg-gradient-to-r from-[#7C3AED] to-[#EC4899] rounded-lg flex items-center justify-center cursor-pointer hover:shadow-lg hover:shadow-[#7C3AED]/30 transition-all shadow-lg z-[60]"
+        className="lg:hidden fixed top-4 right-4 w-12 h-12 bg-gradient-to-r from-[#7C3AED] to-[#EC4899] rounded-lg flex items-center justify-center cursor-pointer hover:shadow-lg hover:shadow-[#7C3AED]/30 transition-all shadow-lg z-[60]"
+        aria-label="Abrir menu"
       >
         <i className="ri-menu-line text-white text-xl"></i>
       </button>

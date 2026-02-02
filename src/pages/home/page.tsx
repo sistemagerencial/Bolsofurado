@@ -1,7 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
-import { monthlyOverview, categoryData } from '../../mocks/financialData';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -34,18 +34,33 @@ export default function HomePage() {
     return 'OK';
   };
 
-  // Dados para evolução mensal
-  const evolutionData = [
-    { month: 'Jan', receita: 45000, despesa: 32000, value: 13000 },
-    { month: 'Fev', receita: 48000, despesa: 35000, value: 13000 },
-    { month: 'Mar', receita: 46000, despesa: 33000, value: 13000 },
-    { month: 'Abr', receita: 50000, despesa: 38000, value: 12000 },
-    { month: 'Mai', receita: 52000, despesa: 36000, value: 16000 },
-    { month: 'Jun', receita: 55000, despesa: 40000, value: 15000 },
-  ];
+  const [categoryData, setCategoryData] = useState<any[]>([]);
+  const [monthlyOverview, setMonthlyOverview] = useState<any>({ totalPlanned: 0, totalSpent: 0, availableBalance: 0, alerts: 0 });
+  const [evolutionData, setEvolutionData] = useState<any[]>([]);
+  const [saldoAcumulado, setSaldoAcumulado] = useState(0);
 
-  // Saldo acumulado de todos os meses (receitas - despesas)
-  const saldoAcumulado = evolutionData.reduce((sum, item) => sum + (item.receita - item.despesa), 0);
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const { data: cats } = await supabase.from('categories').select('*');
+        const { data: months } = await supabase.from('monthly_metrics').select('*');
+        const { data: expenses } = await supabase.from('expenses').select('amount,date');
+        const { data: revenues } = await supabase.from('revenues').select('amount,date');
+        if (!mounted) return;
+        setCategoryData(Array.isArray(cats) ? cats : []);
+        setEvolutionData(Array.isArray(months) ? months : []);
+        const totalSpent = Array.isArray(expenses) ? expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0) : 0;
+        const totalRevenue = Array.isArray(revenues) ? revenues.reduce((s: number, r: any) => s + Number(r.amount || 0), 0) : 0;
+        setMonthlyOverview({ totalPlanned: 0, totalSpent, totalRevenue, availableBalance: totalRevenue - totalSpent, alerts: 0 });
+        setSaldoAcumulado((Array.isArray(months) ? months : []).reduce((s: number, m: any) => s + Number(m.actual || 0 || m.total || 0), 0));
+      } catch (err) {
+        // ignore
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   // Data atual formatada para input date
   const today = new Date().toISOString().split('T')[0];
@@ -90,7 +105,7 @@ export default function HomePage() {
             </div>
             <h3 className="text-xs sm:text-sm text-[#9CA3AF] mb-1 sm:mb-2">Receitas do Mês</h3>
             <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#10B981]">
-              {formatCurrency(55000)}
+              {formatCurrency(monthlyOverview.totalRevenue || 0)}
             </p>
           </div>
 
@@ -293,8 +308,9 @@ export default function HomePage() {
           </div>
 
           <div className="relative h-48 sm:h-64 lg:h-80">
-            <svg className="w-full h-full" viewBox="0 0 800 300" preserveAspectRatio="none">
-              <defs>
+            {evolutionData.length > 0 ? (
+              <svg className="w-full h-full" viewBox="0 0 800 300" preserveAspectRatio="none">
+                <defs>
                 <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor="#7C3AED" />
                   <stop offset="100%" stopColor="#EC4899" />
@@ -345,7 +361,10 @@ export default function HomePage() {
                   />
                 );
               })}
-            </svg>
+              </svg>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-[#9CA3AF]">Sem dados para exibir</div>
+            )}
           </div>
 
           {/* Legenda */}
