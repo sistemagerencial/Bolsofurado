@@ -1,0 +1,6 @@
+{
+  "outputDirectory": "out",
+  "build": {
+    "env": {}
+  }
+}
