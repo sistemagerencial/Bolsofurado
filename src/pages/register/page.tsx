@@ -15,7 +15,9 @@ export default function RegisterPage() {
     setLoading(true);
     setMessage(null);
     if (!name || !name.trim()) {
-      setMessage('Favor insira o nome');
+      const msg = 'Favor insira o nome';
+      setMessage(msg);
+      alert(msg);
       setLoading(false);
       return;
     }
@@ -24,20 +26,53 @@ export default function RegisterPage() {
       // supabase.auth.signUp accepts options with `data` for metadata in many versions
       // try to pass as second argument, fallback to first if needed
       let result: any;
+      // Call signUp in a way compatible with different supabase-js versions.
       try {
-        result = await (supabase.auth as any).signUp({ email, password }, { data: { full_name: name } });
-      } catch (e) {
-        result = await (supabase.auth as any).signUp({ email, password });
-      }
-      if ((result as any).error) {
-        setMessage((result as any).error.message || 'Erro ao cadastrar');
-      } else {
-        setMessage('Verifique seu e-mail para confirmar a conta.');
-        // optionally redirect to login
-        setTimeout(() => navigate('/login'), 2000);
+        const authAny = (supabase.auth as any);
+        if (authAny && typeof authAny.signUp === 'function') {
+          // Preferred v2 signature: signUp({ email, password, options: { data } })
+          try {
+            result = await authAny.signUp({ email, password, options: { data: { full_name: name } } });
+          } catch (innerErr) {
+            // Fallback: older signatures may accept (user, metadata)
+            try {
+              result = await authAny.signUp({ email, password }, { data: { full_name: name } });
+            } catch (innerErr2) {
+              // Last fallback: simple signUp
+              result = await authAny.signUp({ email, password });
+            }
+          }
+        } else {
+          throw new Error('supabase auth.signUp não disponível');
+        }
+
+        if ((result as any).error) {
+          const errMsg = (result as any).error.message || JSON.stringify(result);
+          console.error('SignUp error', result);
+          setMessage(errMsg);
+          alert(errMsg);
+        } else {
+          const successMsg = 'Verifique seu e-mail para confirmar a conta.';
+          setMessage(successMsg);
+          alert(successMsg);
+          setTimeout(() => navigate('/login'), 2000);
+        }
+      } catch (e: any) {
+        console.error('SignUp exception', e);
+        const text = String(e?.message || e || 'Erro ao cadastrar');
+        setMessage(text);
+        alert(text);
       }
     } catch (err: any) {
-      setMessage(err?.message || 'Erro ao cadastrar');
+      const text = String(err?.message || err || 'Erro ao cadastrar');
+      if (text.toLowerCase().includes('failed to fetch') || text.toLowerCase().includes('connection reset')) {
+        const networkMsg = 'Erro de conexão com o Supabase. Verifique sua internet ou configurações de rede (VPN/proxy).';
+        setMessage(networkMsg);
+        alert(networkMsg + '\n\n' + text);
+      } else {
+        setMessage(text || 'Erro ao cadastrar');
+        alert(text || 'Erro ao cadastrar');
+      }
     } finally {
       setLoading(false);
     }
@@ -62,6 +97,12 @@ export default function RegisterPage() {
           <span className="text-sm text-[#9CA3AF]">Email</span>
           <input className="mt-1 block w-full border border-white/10 bg-transparent rounded px-3 py-2 text-[#F9FAFB]" value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
         </label>
+
+        <label className="block mb-3">
+          <span className="text-sm text-[#9CA3AF]">Nome</span>
+          <input className="mt-1 block w-full border border-white/10 bg-transparent rounded px-3 py-2 text-[#F9FAFB]" value={name} onChange={(e) => setName(e.target.value)} type="text" required />
+        </label>
+
         <label className="block mb-4">
           <span className="text-sm text-[#9CA3AF]">Senha</span>
           <input className="mt-1 block w-full border border-white/10 bg-transparent rounded px-3 py-2 text-[#F9FAFB]" value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />

@@ -2,5 +2,8 @@
   "outputDirectory": "out",
   "build": {
     "env": {}
-  }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
