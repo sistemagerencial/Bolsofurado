@@ -5,6 +5,8 @@ interface AuthContextType {
   user: any | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  updateProfile: (payload: { full_name?: string; avatar_url?: string }) => Promise<{ error?: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error?: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,13 +38,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getUser();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    // subscribe to auth state change
+    const subReturn = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setUser(session?.user ?? null);
     });
 
     return () => {
       mounted = false;
-      sub.subscription.unsubscribe();
+      try {
+        // supabase-js may return { data: { subscription } } or { subscription }
+        const subscription = (subReturn && (subReturn as any).data && (subReturn as any).data.subscription)
+          || (subReturn && (subReturn as any).subscription);
+        if (subscription && typeof subscription.unsubscribe === 'function') {
+          subscription.unsubscribe();
+        }
+      } catch (e) {
+        // ignore
+      }
     };
   }, []);
 
@@ -55,8 +67,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function updateProfile(payload: { full_name?: string; avatar_url?: string }) {
+    try {
+      // supabase v2: updateUser accepts { data: { ... } }
+      if ((supabase as any).auth && (supabase as any).auth.updateUser) {
+        const res = await (supabase as any).auth.updateUser({ data: payload });
+        // res may contain data.user
+        if (res?.data?.user) setUser(res.data.user);
+        return { error: (res as any).error };
+      }
+      return { error: 'updateUser not available' };
+    } catch (err) {
+      return { error: err };
+    }
+  }
+
+  async function updatePassword(newPassword: string) {
+    try {
+      if ((supabase as any).auth && (supabase as any).auth.updateUser) {
+        const res = await (supabase as any).auth.updateUser({ password: newPassword });
+        if (res?.data?.user) setUser(res.data.user);
+        return { error: (res as any).error };
+      }
+      return { error: 'updateUser not available' };
+    } catch (err) {
+      return { error: err };
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signOut, updateProfile, updatePassword }}>
       {children}
     </AuthContext.Provider>
   );

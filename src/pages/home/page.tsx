@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
 import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../lib/AuthProvider';
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -62,6 +63,10 @@ export default function HomePage() {
     return () => { mounted = false; };
   }, []);
 
+  const { user } = useAuth();
+  const fullName = user?.user_metadata?.full_name || (user?.email ? user.email.split('@')[0] : 'Executivo');
+  const firstName = String(fullName).split(' ')[0];
+
   // Data atual formatada para input date
   const today = new Date().toISOString().split('T')[0];
 
@@ -71,7 +76,7 @@ export default function HomePage() {
         {/* Saudação */}
         <div className="mb-6 lg:mb-8">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#F9FAFB]">
-            Olá!! <span className="text-[#7C3AED]">Executivo</span>
+            Olá!! <span className="text-[#7C3AED]">{firstName}</span>
           </h1>
           <p className="text-sm sm:text-base text-[#9CA3AF] mt-1">Bem-vindo ao seu painel financeiro</p>
         </div>

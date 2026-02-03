@@ -12,6 +12,7 @@ const PatrimoniosPage = lazy(() => import('../pages/patrimonios/page'));
 const CalculadorasPage = lazy(() => import('../pages/calculadoras/page'));
 const NotFoundPage = lazy(() => import('../pages/NotFound'));
 const LoginPage = lazy(() => import('../pages/login/page'));
+const RegisterPage = lazy(() => import('../pages/register/page'));
 
 const routes: RouteObject[] = [
   {
@@ -85,6 +86,10 @@ const routes: RouteObject[] = [
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/register',
+    element: <RegisterPage />,
   },
   {
     path: '*',

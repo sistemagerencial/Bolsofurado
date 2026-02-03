@@ -149,13 +149,12 @@ export default function ReceitasPage() {
         {/* Busca */}
         <div className="bg-[#16122A] rounded-xl p-4 sm:p-6 border border-white/5 mb-4 sm:mb-6">
           <div className="relative">
-            <i className="ri-search-line absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-base sm:text-lg"></i>
             <input
               type="text"
               placeholder="Buscar receitas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#0E0B16] border border-white/5 rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-[#F9FAFB] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm"
+              className="w-full bg-[#0E0B16] border border-white/5 rounded-xl pl-4 pr-4 py-2.5 sm:py-3 text-[#F9FAFB] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm"
             />
           </div>
         </div>

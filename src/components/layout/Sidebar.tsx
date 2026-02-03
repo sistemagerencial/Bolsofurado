@@ -1,6 +1,8 @@
 
 import { Link, useLocation } from 'react-router-dom';
 import { useState, createContext, useContext, ReactNode } from 'react';
+import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../lib/AuthProvider';
 
 // Contexto para compartilhar estado da sidebar
 interface SidebarContextType {
@@ -60,7 +62,7 @@ export default function Sidebar() {
       <aside 
         className={`fixed left-0 top-0 h-screen bg-[#16122A] border-r border-white/5 flex flex-col z-50 overflow-hidden
           transition-all duration-300 ease-in-out
-          ${isOpen ? 'w-64' : 'w-0 lg:w-20'}
+          ${isOpen ? 'w-56' : 'w-0 lg:w-20'}
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
@@ -80,7 +82,14 @@ export default function Sidebar() {
             />
           </div>
 
-          {/* Desktop hamburger near logo (moved out to avoid overlapping when collapsed) */}
+          {/* Desktop small hamburger placed above the logo */}
+          <button
+            onClick={toggleSidebar}
+            aria-label="Abrir/fechar menu"
+            className={`hidden lg:inline-flex absolute left-1/2 -translate-x-1/2 -top-3 w-8 h-8 bg-white/5 hover:bg-white/10 rounded-full items-center justify-center transition-all shadow z-50`}
+          >
+            <i className="ri-menu-line text-white text-sm"></i>
+          </button>
         </div>
 
         {/* Menu de Navegação */}
@@ -117,35 +126,10 @@ export default function Sidebar() {
         </nav>
 
         {/* Perfil do Usuário */}
-        <div className="p-3 border-t border-white/5">
-          <div className={`flex items-center rounded-lg transition-all duration-300 ${
-            isOpen ? 'gap-3 px-3 py-2' : 'lg:justify-center lg:px-2 lg:py-2'
-          }`}>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center flex-shrink-0">
-              <i className="ri-user-line text-white text-base"></i>
-            </div>
-            <div className={`flex-1 min-w-0 transition-all duration-300 ${
-              isOpen ? 'opacity-100' : 'opacity-0 hidden lg:hidden'
-            }`}>
-              <p className="text-sm font-medium text-[#F9FAFB] truncate">Executivo</p>
-              <p className="text-xs text-[#9CA3AF] truncate">Administrador</p>
-            </div>
-          </div>
-        </div>
+        <UserProfile isOpen={isOpen} />
       </aside>
 
-      {/* Desktop hamburger (fixed) - positioned next to the sidebar to avoid overlapping the logo */}
-      <button
-        onClick={toggleSidebar}
-        aria-label="Abrir/fechar menu"
-        className="hidden lg:flex fixed top-4 w-10 h-10 bg-white/5 hover:bg-white/10 rounded-md items-center justify-center transition-all shadow z-[60]"
-        style={{
-          // compute left based on sidebar state (w-64 == 256px, w-20 == 80px)
-          left: `${isOpen ? 256 - 12 : 80 - 12}px`
-        }}
-      >
-        <i className="ri-menu-line text-white text-lg"></i>
-      </button>
+      
 
       {/* Mobile hamburger - visible on small screens (right side) */}
       <button
@@ -156,5 +140,172 @@ export default function Sidebar() {
         <i className="ri-menu-line text-white text-xl"></i>
       </button>
     </>
+  );
+}
+
+function UserProfile({ isOpen }: { isOpen: boolean }) {
+  const { user, signOut, updateProfile, updatePassword } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [avatar, setAvatar] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || (user?.email ? user.email.split('@')[0] : 'Usuário');
+  const firstName = String(displayName).split(' ')[0];
+  const avatarUrl = user?.user_metadata?.avatar_url || null;
+
+  const openEditor = () => {
+    setName(displayName);
+    setAvatar(avatarUrl || '');
+    setOpen(true);
+  };
+
+  async function handleSaveProfile() {
+    // validação local
+    if (!name || !name.trim()) {
+      setMsg('Favor insira o nome do usuário');
+      return;
+    }
+    setLoading(true);
+    setMsg(null);
+    try {
+      const res = await updateProfile({ full_name: name, avatar_url: avatar });
+      if (res.error) setMsg('Erro ao atualizar perfil');
+      else setMsg('Perfil atualizado');
+    } catch (e) {
+      setMsg('Erro');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleChangePassword() {
+    if (!newPassword || !newPassword.trim()) {
+      setMsg('Favor insira a senha');
+      return;
+    }
+    setLoading(true);
+    setMsg(null);
+    try {
+      const res = await updatePassword(newPassword);
+      if (res.error) setMsg('Erro ao alterar senha');
+      else setMsg('Senha atualizada');
+    } catch (e) {
+      setMsg('Erro');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="p-3 border-t border-white/5">
+      <div className={`flex items-center rounded-lg transition-all duration-300 ${
+        isOpen ? 'gap-3 px-3 py-2' : 'lg:justify-center lg:px-2 lg:py-2'
+      }`}>
+        <button onClick={openEditor} className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center flex-shrink-0 overflow-hidden">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+          ) : (
+            <i className="ri-user-line text-white text-base"></i>
+          )}
+        </button>
+        <div className={`flex-1 min-w-0 transition-all duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 hidden lg:hidden'
+        }`}>
+          <p className="text-sm font-medium text-[#F9FAFB] truncate">{firstName}</p>
+        </div>
+        <div className="ml-2">
+          <button onClick={() => signOut()} className="text-sm text-[#9CA3AF] hover:text-white">Sair</button>
+        </div>
+
+      </div>
+
+      {open && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
+          <div className="relative z-10 w-full max-w-md bg-[#0E0B16] border border-white/5 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-[#F9FAFB] mb-3">Editar perfil</h3>
+            {msg && <div className="text-sm text-[#9CA3AF] mb-2">{msg}</div>}
+            <label className="block mb-2">
+              <span className="text-sm text-[#9CA3AF]">Nome</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 block w-full border border-white/10 bg-transparent rounded px-3 py-2 text-[#F9FAFB]" />
+            </label>
+            <label className="block mb-2">
+              <span className="text-sm text-[#9CA3AF]">Avatar (selecione imagem)</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  if (!file) return;
+                  setMsg('Enviando...');
+                  // If supabase storage is available, try upload to 'avatars' bucket
+                  try {
+                    const storage = (supabase as any).storage;
+                    if (storage && typeof storage.from === 'function') {
+                      const userId = user?.id || 'anonymous';
+                      const filePath = `public/${userId}/${Date.now()}_${file.name}`;
+                      const uploadRes = await storage.from('avatars').upload(filePath, file as any, { cacheControl: '3600', upsert: false });
+                      const uploadError = uploadRes?.error || uploadRes?.data?.error || null;
+                      if (uploadError) {
+                        setMsg('Erro ao enviar imagem para storage');
+                        // fallback to preview
+                        const reader = new FileReader();
+                        reader.onload = () => setAvatar(String(reader.result));
+                        reader.readAsDataURL(file);
+                        return;
+                      }
+                      // get public url
+                      let publicUrl = '';
+                      try {
+                        const urlRes = await storage.from('avatars').getPublicUrl(filePath);
+                        publicUrl = (urlRes && (urlRes.data?.publicUrl || urlRes.publicUrl)) || '';
+                      } catch (e) {
+                        // ignore
+                      }
+                      if (publicUrl) {
+                        setAvatar(publicUrl);
+                        setMsg('Imagem enviada');
+                      } else {
+                        // fallback to data URL preview
+                        const reader = new FileReader();
+                        reader.onload = () => setAvatar(String(reader.result));
+                        reader.readAsDataURL(file);
+                        setMsg('Preview pronta');
+                      }
+                    } else {
+                      // No storage available: preview as data URL
+                      const reader = new FileReader();
+                      reader.onload = () => setAvatar(String(reader.result));
+                      reader.readAsDataURL(file);
+                      setMsg('Preview pronta');
+                    }
+                  } catch (err) {
+                    setMsg('Erro ao processar imagem');
+                  }
+                }}
+                className="mt-1 block w-full text-sm text-[#F9FAFB]"
+              />
+            </label>
+            <div className="mt-3">
+              <button onClick={handleSaveProfile} disabled={loading} className="mr-2 bg-[#7C3AED] text-white px-4 py-2 rounded">Salvar</button>
+              <button onClick={() => setOpen(false)} className="bg-white/5 text-[#F9FAFB] px-4 py-2 rounded">Fechar</button>
+            </div>
+
+            <hr className="my-4 border-white/5" />
+
+            <h4 className="text-sm font-medium text-[#F9FAFB] mb-2">Alterar senha</h4>
+            <label className="block mb-2">
+              <input placeholder="Nova senha" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1 block w-full border border-white/10 bg-transparent rounded px-3 py-2 text-[#F9FAFB]" />
+            </label>
+            <div className="mt-2">
+              <button onClick={handleChangePassword} disabled={loading} className="bg-[#EC4899] text-white px-4 py-2 rounded">Alterar senha</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

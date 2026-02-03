@@ -15,7 +15,7 @@ function MainContent({ children }: { children: ReactNode }) {
         min-h-screen w-full
         transition-all duration-300 ease-in-out
         lg:pl-20
-        ${isOpen ? 'lg:pl-64' : 'lg:pl-20'}
+        ${isOpen ? 'lg:pl-56' : 'lg:pl-20'}
       `}
       style={{
         transitionProperty: 'padding-left',
