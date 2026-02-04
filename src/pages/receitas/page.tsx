@@ -36,7 +36,7 @@ export default function ReceitasPage() {
     let mounted = true;
     async function load() {
         try {
-        const { data } = await supabase.from('revenues').select('*');
+        const { data } = await supabase.from('receitas').select('*');
         const { data: cats } = await supabase.from('categories').select('name');
         if (!mounted) return;
         const list = Array.isArray(data) ? data : [];

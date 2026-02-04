@@ -3,6 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
+// In development use a local proxy to avoid TLS/HTTP2 issues in some environments.
+// The proxy runs at http://localhost:8080 and forwards /rest/v1 to Supabase.
+const devProxyUrl = import.meta.env.VITE_SUPABASE_PROXY_URL as string | undefined || 'http://localhost:8080';
+const effectiveSupabaseUrl = import.meta.env.DEV ? (devProxyUrl || supabaseUrl) : supabaseUrl;
+
 function createNoopClient() {
 	const noop = {
 		from: (_table: string) => ({
@@ -35,7 +40,39 @@ if (!supabaseUrl || !supabaseAnonKey) {
 	console.warn('VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is missing — using noop supabase client.');
 	supabase = createNoopClient();
 } else {
-	supabase = createClient(supabaseUrl, supabaseAnonKey);
+	// Enable session persistence and automatic token refresh so users stay logged in across reloads
+	supabase = createClient(effectiveSupabaseUrl as string, supabaseAnonKey, {
+		auth: {
+			persistSession: true,
+			autoRefreshToken: true,
+			detectSessionInUrl: false,
+		},
+	});
+
+	// Dev-only debug logs: print that client initialized and intercept fetch to log requests
+	if (typeof window !== 'undefined') {
+		// eslint-disable-next-line no-console
+		console.log('SUPABASE DEBUG:', { requestedUrl: supabaseUrl, effectiveUrl: effectiveSupabaseUrl, anonKeyPresent: !!supabaseAnonKey });
+
+		try {
+			const _origFetch = window.fetch.bind(window);
+			window.fetch = async (input: RequestInfo, init?: RequestInit) => {
+				try {
+					const url = typeof input === 'string' ? input : input instanceof Request ? input.url : '';
+					if (url && effectiveSupabaseUrl && url.includes(effectiveSupabaseUrl)) {
+						// eslint-disable-next-line no-console
+						console.debug('SUPABASE FETCH', { url, headers: init?.headers });
+					}
+				} catch (e) {
+					/* ignore logging errors */
+				}
+				return _origFetch(input, init);
+			};
+		} catch (e) {
+			// eslint-disable-next-line no-console
+			console.warn('Could not instrument window.fetch for Supabase debugging', e);
+		}
+	}
 }
 
 export { supabase };

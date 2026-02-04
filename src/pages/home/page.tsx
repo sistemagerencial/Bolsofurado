@@ -46,8 +46,8 @@ export default function HomePage() {
       try {
         const { data: cats } = await supabase.from('categories').select('*');
         const { data: months } = await supabase.from('monthly_metrics').select('*');
-        const { data: expenses } = await supabase.from('expenses').select('amount,date');
-        const { data: revenues } = await supabase.from('revenues').select('amount,date');
+        const { data: expenses } = await supabase.from('despesas').select('amount,date');
+        const { data: revenues } = await supabase.from('receitas').select('amount,date');
         if (!mounted) return;
         setCategoryData(Array.isArray(cats) ? cats : []);
         setEvolutionData(Array.isArray(months) ? months : []);

@@ -5,8 +5,8 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Expenses
-CREATE TABLE IF NOT EXISTS public.expenses (
+-- Despesas
+CREATE TABLE IF NOT EXISTS public.despesas (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid,
   date date NOT NULL,
@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS public.expenses (
   created_at timestamptz DEFAULT now()
 );
 
--- Revenues
-CREATE TABLE IF NOT EXISTS public.revenues (
+-- Receitas
+CREATE TABLE IF NOT EXISTS public.receitas (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid,
   date date NOT NULL,
@@ -102,14 +102,14 @@ CREATE TABLE IF NOT EXISTS public.monthly_metrics (
 );
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_expenses_date ON public.expenses(date);
-CREATE INDEX IF NOT EXISTS idx_revenues_date ON public.revenues(date);
+CREATE INDEX IF NOT EXISTS idx_despesas_date ON public.despesas(date);
+CREATE INDEX IF NOT EXISTS idx_receitas_date ON public.receitas(date);
 CREATE INDEX IF NOT EXISTS idx_portfolio_user ON public.portfolio_assets(user_id);
 
 -- Optional: grant select to anon (only if you want public read access)
 -- GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
 
 -- NOTE: Supabase auth creates an `auth.users` table; you can reference it for user_id
--- Example foreign key: ALTER TABLE public.expenses ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES auth.users(id);
+-- Example foreign key: ALTER TABLE public.despesas ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES auth.users(id);
 
 -- End of schema

@@ -40,7 +40,7 @@ export default function DespesasPage() {
     let mounted = true;
     async function load() {
       try {
-        const { data } = await supabase.from('expenses').select('*');
+        const { data } = await supabase.from('despesas').select('*');
         const { data: cats } = await supabase.from('categories').select('name');
         if (!mounted) return;
         const list = Array.isArray(data) ? data : [];

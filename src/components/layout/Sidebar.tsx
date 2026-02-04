@@ -119,9 +119,13 @@ export default function Sidebar() {
                 title={!isOpen ? item.label : undefined}
               >
                 <i className={`${item.icon} text-lg w-5 h-5 flex items-center justify-center flex-shrink-0`}></i>
-                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  isOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'
-                }`}>
+                <span
+                  className={
+                    isOpen
+                      ? 'text-sm font-medium whitespace-nowrap transition-all duration-300 opacity-100 w-auto'
+                      : 'text-sm font-medium whitespace-nowrap transition-all duration-300 opacity-0 w-0 overflow-hidden'
+                  }
+                >
                   {item.label}
                 </span>
               </Link>
@@ -137,13 +141,13 @@ export default function Sidebar() {
 
       {/* Mobile hamburger - visible on small screens (right side) */}
       <button
-        onClick={toggleSidebar}
+        onClick={(e) => { e.stopPropagation(); toggleSidebar(); }}
         className="lg:hidden fixed top-4 right-4 w-12 h-12 bg-gradient-to-r from-[#7C3AED] to-[#EC4899] rounded-lg flex items-center justify-center cursor-pointer hover:shadow-lg hover:shadow-[#7C3AED]/30 transition-all shadow-lg z-[60]"
         aria-label="Abrir menu"
       >
         <i className="ri-menu-line text-white text-xl"></i>
-          <button
-            onClick={(e) => { e.stopPropagation(); toggleSidebar(); }}
+      </button>
+    </>
   );
 }
 
@@ -214,10 +218,14 @@ function UserProfile({ isOpen }: { isOpen: boolean }) {
           ) : (
             <i className="ri-user-line text-white text-base"></i>
           )}
-        <button
-          onClick={(e) => { e.stopPropagation(); toggleSidebar(); }}
-          isOpen ? 'opacity-100' : 'opacity-0 hidden lg:hidden'
-        }`}>
+        </button>
+        <div
+          className={
+            isOpen
+              ? 'flex-1 min-w-0 transition-all duration-300 opacity-100'
+              : 'flex-1 min-w-0 transition-all duration-300 opacity-0 hidden lg:hidden'
+          }
+        >
           <p className="text-sm font-medium text-[#F9FAFB] truncate">{firstName}</p>
         </div>
         <div className="ml-2">

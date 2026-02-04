@@ -26,9 +26,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function getUser() {
       try {
-        const { data } = await supabase.auth.getUser();
+        // prefer getting session so we can access session.user reliably
+        const { data } = await supabase.auth.getSession();
         if (!mounted) return;
-        setUser(data.user ?? null);
+        const session = data?.session ?? null;
+        setUser(session?.user ?? null);
       } catch (err) {
         // ignore
       } finally {
@@ -39,8 +41,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getUser();
 
     // subscribe to auth state change
-    const subReturn = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+    const subReturn = supabase.auth.onAuthStateChange((event: any, session: any) => {
+      // session may be null on sign out
       setUser(session?.user ?? null);
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
     });
 
     return () => {
