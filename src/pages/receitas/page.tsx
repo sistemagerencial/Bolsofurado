@@ -30,15 +30,18 @@ export default function ReceitasPage() {
   const [revenues, setRevenues] = useState<any[]>([]);
   const [totalRevenues, setTotalRevenues] = useState(0);
   const [thisMonthRevenues, setThisMonthRevenues] = useState(0);
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
     let mounted = true;
     async function load() {
-      try {
+        try {
         const { data } = await supabase.from('revenues').select('*');
+        const { data: cats } = await supabase.from('categories').select('name');
         if (!mounted) return;
         const list = Array.isArray(data) ? data : [];
         setRevenues(list as any[]);
+        setCategories(Array.isArray(cats) ? (cats as any[]).map((c) => c.name) : []);
         const total = list.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
         setTotalRevenues(total);
         const month = new Date().toISOString().slice(0,7); // current YYYY-MM
@@ -91,14 +94,21 @@ export default function ReceitasPage() {
     });
   };
 
-  const handleAddCategory = () => {
-    if (newCategory.trim()) {
-      console.log('Nova categoria:', newCategory);
-      // Implementar lógica de persistência, se necessário
+  const handleAddCategory = async () => {
+    if (!newCategory.trim()) {
+      alert('O nome da categoria não pode ser vazio.');
+      return;
+    }
+    try {
+      const { error } = await supabase.from('categories').insert({ name: newCategory.trim() });
+      if (error) throw error;
+      const { data: cats } = await supabase.from('categories').select('name');
+      setCategories(Array.isArray(cats) ? (cats as any[]).map((c) => c.name) : []);
       setShowCategoryModal(false);
       setNewCategory('');
-    } else {
-      alert('O nome da categoria não pode ser vazio.');
+    } catch (err) {
+      console.error('Erro ao adicionar categoria', err);
+      alert('Erro ao adicionar categoria. Verifique o console.');
     }
   };
 
@@ -278,10 +288,18 @@ export default function ReceitasPage() {
                       required
                     >
                       <option value="">Selecione uma categoria</option>
-                      <option value="Vendas">Vendas</option>
-                      <option value="Serviços">Serviços</option>
-                      <option value="Investimentos">Investimentos</option>
-                      <option value="Outros">Outros</option>
+                      {categories.length === 0 ? (
+                        <>
+                          <option value="Vendas">Vendas</option>
+                          <option value="Serviços">Serviços</option>
+                          <option value="Investimentos">Investimentos</option>
+                          <option value="Outros">Outros</option>
+                        </>
+                      ) : (
+                        categories.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))
+                      )}
                     </select>
                     <button
                       type="button"

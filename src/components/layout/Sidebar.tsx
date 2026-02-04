@@ -48,6 +48,14 @@ export default function Sidebar() {
   const location = useLocation();
   const { isOpen, setIsOpen, toggleSidebar } = useSidebar();
 
+  // Handle navigation clicks: on mobile close the sidebar; on desktop do not change isOpen
+  const handleNavClick = (path: string) => {
+    if (window.innerWidth < 1024) {
+      setIsOpen(false);
+    }
+    // do not toggle or expand sidebar on desktop when clicking icons
+  };
+
   return (
     <>
       {/* Overlay para mobile */}
@@ -100,11 +108,7 @@ export default function Sidebar() {
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={() => {
-                  if (window.innerWidth < 1024) {
-                    setIsOpen(false);
-                  }
-                }}
+                onClick={() => handleNavClick(item.path)}
                 className={`flex items-center rounded-lg transition-all duration-200 cursor-pointer ${
                   isOpen ? 'gap-3 px-3 py-2.5' : 'lg:justify-center lg:px-2 lg:py-2.5'
                 } ${
@@ -138,8 +142,8 @@ export default function Sidebar() {
         aria-label="Abrir menu"
       >
         <i className="ri-menu-line text-white text-xl"></i>
-      </button>
-    </>
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleSidebar(); }}
   );
 }
 
@@ -210,8 +214,8 @@ function UserProfile({ isOpen }: { isOpen: boolean }) {
           ) : (
             <i className="ri-user-line text-white text-base"></i>
           )}
-        </button>
-        <div className={`flex-1 min-w-0 transition-all duration-300 ${
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleSidebar(); }}
           isOpen ? 'opacity-100' : 'opacity-0 hidden lg:hidden'
         }`}>
           <p className="text-sm font-medium text-[#F9FAFB] truncate">{firstName}</p>

@@ -28,6 +28,8 @@ export default function PlanejamentoPage() {
   const [totalBudget, setTotalBudget] = useState(0);
   const [totalSpent, setTotalSpent] = useState(0);
   const [totalDifference, setTotalDifference] = useState(0);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newPlan, setNewPlan] = useState({ category: '', budget: '', spent: '' });
 
   useEffect(() => {
     let mounted = true;
@@ -49,6 +51,33 @@ export default function PlanejamentoPage() {
     load();
     return () => { mounted = false; };
   }, []);
+
+  const handleAddPlan = async () => {
+    if (!newPlan.category || !newPlan.budget) {
+      alert('Preencha categoria e orçamento para adicionar a meta.');
+      return;
+    }
+    try {
+      const payload = {
+        category: newPlan.category,
+        budget: Number(String(newPlan.budget).replace(',', '.')) || 0,
+        spent: Number(String(newPlan.spent).replace(',', '.')) || 0,
+        difference: (Number(String(newPlan.budget).replace(',', '.')) || 0) - (Number(String(newPlan.spent).replace(',', '.')) || 0),
+        percentage: 0,
+        status: 'ok'
+      };
+      const { error } = await supabase.from('planning').insert(payload);
+      if (error) throw error;
+      // reload
+      const { data } = await supabase.from('planning').select('*');
+      setPlanningData(Array.isArray(data) ? data : []);
+      setShowAddModal(false);
+      setNewPlan({ category: '', budget: '', spent: '' });
+    } catch (err) {
+      console.error('Erro ao adicionar meta', err);
+      alert('Erro ao adicionar meta. Veja console.');
+    }
+  };
 
   return (
     <MainLayout>
@@ -214,6 +243,40 @@ export default function PlanejamentoPage() {
             </table>
           </div>
         </div>
+
+          {/* Floating Add Meta Button */}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="fixed bottom-20 lg:bottom-8 right-4 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-[#7C3AED] to-[#EC4899] rounded-full shadow-2xl shadow-[#7C3AED]/30 flex items-center justify-center hover:scale-110 transition-all cursor-pointer group z-40"
+          >
+            <i className="ri-add-line text-2xl lg:text-3xl text-white group-hover:rotate-90 transition-transform"></i>
+          </button>
+
+          {/* Modal Adicionar Meta */}
+          {showAddModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowAddModal(false)}>
+              <div className="bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-[#F9FAFB]">Nova Meta</h3>
+                  <button onClick={() => setShowAddModal(false)} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center">
+                    <i className="ri-close-line text-lg text-[#F9FAFB]"></i>
+                  </button>
+                </div>
+                <div className="p-4">
+                  <label className="block text-sm text-[#9CA3AF] mb-2">Categoria</label>
+                  <input className="w-full bg-[#0E0B16] border border-white/5 rounded-xl px-3 py-2 text-[#F9FAFB] mb-3" value={newPlan.category} onChange={(e) => setNewPlan({ ...newPlan, category: e.target.value })} />
+                  <label className="block text-sm text-[#9CA3AF] mb-2">Orçamento (R$)</label>
+                  <input className="w-full bg-[#0E0B16] border border-white/5 rounded-xl px-3 py-2 text-[#F9FAFB] mb-3" value={newPlan.budget} onChange={(e) => setNewPlan({ ...newPlan, budget: e.target.value })} />
+                  <label className="block text-sm text-[#9CA3AF] mb-2">Gasto Inicial (opcional)</label>
+                  <input className="w-full bg-[#0E0B16] border border-white/5 rounded-xl px-3 py-2 text-[#F9FAFB] mb-4" value={newPlan.spent} onChange={(e) => setNewPlan({ ...newPlan, spent: e.target.value })} />
+                  <div className="flex gap-3">
+                    <button onClick={() => setShowAddModal(false)} className="flex-1 px-4 py-2 bg-white/5 rounded-xl">Cancelar</button>
+                    <button onClick={handleAddPlan} className="flex-1 px-4 py-2 bg-gradient-to-br from-[#7C3AED] to-[#EC4899] text-white rounded-xl">Adicionar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* Alertas */}
         <div className="mt-8 bg-[#16122A] rounded-2xl p-6 border border-white/5">

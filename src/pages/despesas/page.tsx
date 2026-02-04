@@ -34,15 +34,18 @@ export default function DespesasPage() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [thisMonthExpenses, setThisMonthExpenses] = useState(0);
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
     let mounted = true;
     async function load() {
       try {
         const { data } = await supabase.from('expenses').select('*');
+        const { data: cats } = await supabase.from('categories').select('name');
         if (!mounted) return;
         const list = Array.isArray(data) ? data : [];
         setExpenses(list);
+        setCategories(Array.isArray(cats) ? (cats as any[]).map((c) => c.name) : []);
         setTotalExpenses(list.reduce((s: number, e: any) => s + Number(e.amount || 0), 0));
         const month = new Date().toISOString().slice(0,7);
         setThisMonthExpenses(list.filter((e: any) => (e.date||'').toString().startsWith(month)).length);
@@ -114,14 +117,23 @@ export default function DespesasPage() {
   };
 
   const handleAddCategory = () => {
-    if (newCategory.trim()) {
-      console.log('Nova categoria:', newCategory);
-      // TODO: Persist the new category if needed
-      setShowCategoryModal(false);
-      setNewCategory('');
-    } else {
+    if (!newCategory.trim()) {
       alert('Informe um nome para a categoria.');
+      return;
     }
+    (async () => {
+      try {
+        const { error } = await supabase.from('categories').insert({ name: newCategory.trim() });
+        if (error) throw error;
+        const { data: cats } = await supabase.from('categories').select('name');
+        setCategories(Array.isArray(cats) ? (cats as any[]).map((c) => c.name) : []);
+        setShowCategoryModal(false);
+        setNewCategory('');
+      } catch (err) {
+        console.error('Erro ao adicionar categoria', err);
+        alert('Erro ao adicionar categoria. Verifique o console.');
+      }
+    })();
   };
 
   // ---------- Render ----------
@@ -346,12 +358,20 @@ export default function DespesasPage() {
                       required
                     >
                       <option value="">Selecione uma categoria</option>
-                      <option value="Pessoal">Pessoal</option>
-                      <option value="Marketing">Marketing</option>
-                      <option value="Infraestrutura">Infraestrutura</option>
-                      <option value="Tecnologia">Tecnologia</option>
-                      <option value="Operacional">Operacional</option>
-                      <option value="Administrativo">Administrativo</option>
+                      {categories.length === 0 ? (
+                        <>
+                          <option value="Pessoal">Pessoal</option>
+                          <option value="Marketing">Marketing</option>
+                          <option value="Infraestrutura">Infraestrutura</option>
+                          <option value="Tecnologia">Tecnologia</option>
+                          <option value="Operacional">Operacional</option>
+                          <option value="Administrativo">Administrativo</option>
+                        </>
+                      ) : (
+                        categories.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))
+                      )}
                     </select>
                     <button
                       type="button"

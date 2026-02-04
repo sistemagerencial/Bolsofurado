@@ -13,8 +13,8 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-color: #0E0B16;
     color: #F9FAFB;
-    /* slightly smaller base font for a slimmer layout */
-    font-size: 14px;
+    /* slightly smaller base font for a slimmer, more delicate layout */
+    font-size: 13px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -40,11 +40,15 @@
 
 /* Make cards and elements with rounded-xl a bit more compact */
 .rounded-xl {
-  padding: 0.75rem !important;
+  padding: 0.5rem !important;
   border-radius: 0.5rem !important;
 }
 
 /* Slightly reduce spacing for common paddings to create a slim look */
-.p-4 { padding: 0.75rem !important; }
-.sm\:p-6 { padding: 0.9rem !important; }
+.p-4 { padding: 0.5rem !important; }
+.sm\:p-6 { padding: 0.75rem !important; }
+
+/* Reduce common text sizes for a more delicate UI */
+.text-base { font-size: 0.9rem !important; }
+.text-sm { font-size: 0.78rem !important; }
 
