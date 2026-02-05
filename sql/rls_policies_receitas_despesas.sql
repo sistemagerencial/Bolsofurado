@@ -14,8 +14,7 @@ BEGIN
     DROP POLICY IF EXISTS anon_select_receitas ON public.receitas;
     DROP POLICY IF EXISTS auth_manage_receitas ON public.receitas;
 
-    -- política: anon pode apenas SELECT (leitura pública)
-    CREATE POLICY anon_select_receitas ON public.receitas FOR SELECT TO anon USING (true);
+    -- (removed public anon SELECT policy to make table private)
 
     -- política: usuários autenticados podem fazer CRUD apenas nas suas próprias linhas
     CREATE POLICY auth_manage_receitas ON public.receitas
@@ -31,7 +30,7 @@ BEGIN
     DROP POLICY IF EXISTS anon_select_despesas ON public.despesas;
     DROP POLICY IF EXISTS auth_manage_despesas ON public.despesas;
 
-    CREATE POLICY anon_select_despesas ON public.despesas FOR SELECT TO anon USING (true);
+    -- (removed public anon SELECT policy to make table private)
 
     CREATE POLICY auth_manage_despesas ON public.despesas
       FOR ALL
