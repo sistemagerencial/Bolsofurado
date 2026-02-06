@@ -1,3 +1,79 @@
+-- Idempotent RLS migration for `receitas` and `despesas`
+-- Creates trigger function to populate user_id from jwt and owner-row policies.
+-- SAFE TO COMMIT (no secrets)
+
+-- function: set_user_id()
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'set_user_id') THEN
+        CREATE OR REPLACE FUNCTION public.set_user_id()
+        RETURNS trigger
+        LANGUAGE plpgsql
+        SECURITY DEFINER
+        AS $$
+        BEGIN
+            -- prefer explicit claim user_id, fallback to sub
+            IF NEW.user_id IS NULL THEN
+                NEW.user_id := COALESCE(current_setting('jwt.claims.user_id', true), current_setting('jwt.claims.sub', true))::uuid;
+            END IF;
+            RETURN NEW;
+        END;
+        $$;
+    END IF;
+END$$;
+
+-- create triggers for receitas and despesas if not exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.triggers
+        WHERE event_object_table = 'receitas' AND trigger_name = 'receitas_set_user_id'
+    ) THEN
+        CREATE TRIGGER receitas_set_user_id
+        BEFORE INSERT ON public.receitas
+        FOR EACH ROW
+        EXECUTE FUNCTION public.set_user_id();
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.triggers
+        WHERE event_object_table = 'despesas' AND trigger_name = 'despesas_set_user_id'
+    ) THEN
+        CREATE TRIGGER despesas_set_user_id
+        BEFORE INSERT ON public.despesas
+        FOR EACH ROW
+        EXECUTE FUNCTION public.set_user_id();
+    END IF;
+END$$;
+
+-- Owner-row RLS policies (idempotent checks)
+-- receitas
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='receitas' AND policyname = 'auth_manage_receitas'
+    ) THEN
+        ALTER TABLE public.receitas ENABLE ROW LEVEL SECURITY;
+        CREATE POLICY auth_manage_receitas ON public.receitas
+            USING (user_id = (current_setting('jwt.claims.sub', true))::uuid)
+            WITH CHECK (user_id = (current_setting('jwt.claims.sub', true))::uuid);
+    END IF;
+END$$;
+
+-- despesas
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='despesas' AND policyname = 'auth_manage_despesas'
+    ) THEN
+        ALTER TABLE public.despesas ENABLE ROW LEVEL SECURITY;
+        CREATE POLICY auth_manage_despesas ON public.despesas
+            USING (user_id = (current_setting('jwt.claims.sub', true))::uuid)
+            WITH CHECK (user_id = (current_setting('jwt.claims.sub', true))::uuid);
+    END IF;
+END$$;
+
+-- End of migration
 -- Habilita RLS e cria políticas para `receitas` e `despesas`
 -- Idempotente: pode ser aplicado repetidas vezes
 
