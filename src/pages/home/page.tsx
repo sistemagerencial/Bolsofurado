@@ -157,7 +157,24 @@ export default function HomePage() {
 
   const colorOptions = ['#22C55E', '#7C3AED', '#EC4899', '#FACC15', '#EF4444', '#8B5CF6', '#10B981', '#F97316'];
 
+  // Refs para carrosséis — forçar scroll para o mês atual (direita)
+  const savingsRef = useRef<HTMLDivElement | null>(null);
+  const evolutionRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => { fetchBudgets(selectedGoalMonth); }, [selectedGoalMonth]);
+
+  // Sempre rola os carrosséis para a direita (mês atual) quando os dados mudam
+  useEffect(() => {
+    if (savingsRef.current) {
+      savingsRef.current.scrollLeft = savingsRef.current.scrollWidth;
+    }
+  }, [savingsData.length]);
+
+  useEffect(() => {
+    if (evolutionRef.current) {
+      evolutionRef.current.scrollLeft = evolutionRef.current.scrollWidth;
+    }
+  }, [evolutionData.length, currentMonth]);
 
   const handlePreviousMonth = () => {
     const [year, month] = selectedGoalMonth.split('-').map(Number);
@@ -765,7 +782,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto pb-2 mb-3">
+                  <div ref={savingsRef} className="overflow-x-auto pb-2 mb-3">
                     <div className="flex gap-2" style={{ minWidth: `${savingsData.length * 130}px` }}>
                       {savingsData.map((item, index) => {
                         const color = getSavingsColor(item.percentual);
@@ -847,7 +864,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto pb-2">
+                  <div ref={evolutionRef} className="overflow-x-auto pb-2">
                     <div className="flex items-end gap-2 h-44 sm:h-52 mb-4" style={{ minWidth: '720px' }}>
                       {evolutionData.map((item, index) => {
                         const maxVal = Math.max(...evolutionData.map(d => Math.max(d.receita, d.despesa)), 1);
@@ -1205,7 +1222,7 @@ export default function HomePage() {
       </div>
 
       {/* Botões Flutuantes */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 flex flex-col gap-3 sm:gap-4 z-40">
+      <div className="fixed left-1/2 top-20 transform -translate-x-1/2 flex gap-3 z-40">
         <button onClick={() => setShowReceitaModal(true)} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center cursor-pointer hover:scale-110 transition-all shadow-lg shadow-[#10B981]/50">
           <i className="ri-add-line text-white text-2xl sm:text-3xl"></i>
         </button>

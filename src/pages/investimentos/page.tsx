@@ -1663,7 +1663,7 @@ export default function InvestimentosPage() {
               <div className="flex gap-2 sm:gap-3">
                 <button
                   onClick={() => setShowNewInvestmentModal(true)}
-                  className="w-full sm:w-auto px-4 sm:px-6 py-3 bg-[#16122A] hover:bg-[#16122A]/80 border border-white/10 hover:border-[#7C3AED]/30 text-[#F9FAFB] rounded-xl font-medium transition-all cursor-pointer whitespace-nowrap text-sm sm:text-base flex items-center gap-2">
+                  className="w-full sm:w-auto px-4 sm:px-6 py-3 bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:shadow-lg hover:shadow-[#7C3AED]/30 text-white rounded-xl font-medium transition-all cursor-pointer whitespace-nowrap text-sm sm:text-base flex items-center gap-2">
                   <i className="ri-add-line" /> Novo Investimento
                 </button>
               </div>
