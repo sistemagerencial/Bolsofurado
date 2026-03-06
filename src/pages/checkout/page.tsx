@@ -362,31 +362,25 @@ export default function CheckoutPage() {
         cpf: cpf.replace(/\D/g, '').slice(0, 3) + '***'
       });
 
-      const { data, error } = await supabase.functions.invoke('create-payment', {
+      const { data, error } = await supabase.functions.invoke("create-payment", {
         body: {
+          user_id: user.id,
           plan: selectedPlan,
-          payment_method: 'pix',
+          payment_method: "pix",
           payer: {
             email: user.email,
-            first_name: user.user_metadata?.full_name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || 'Cliente',
-            last_name: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
-            identification: {
-              type: 'CPF',
-              number: cpf.replace(/\D/g, ''),
-            },
+            cpf: cpf
           }
         }
       });
 
-      console.log('Resposta da edge function:', { 
-        hasError: !!error, 
-        hasData: !!data,
-        dataKeys: data ? Object.keys(data) : []
-      });
+      console.log('EDGE DATA:', data);
 
       if (error) {
-        console.error('Erro da edge function:', error);
-        throw new Error(error.message || 'Erro ao criar pagamento');
+        // 👇 MOSTRA O ERRO REAL QUE A FUNÇÃO RETORNOU
+        const msg = await error.context?.json?.().catch(() => null);
+        console.error('EDGE ERROR:', msg || error);
+        throw error;
       }
 
       // Verificar se há erro retornado no data
@@ -609,7 +603,7 @@ export default function CheckoutPage() {
                         type="text"
                         value={paymentData.qr_code}
                         readOnly
-                        className="flex-1 p-3 text-sm border border-gray-300 rounded-l-lg bg-gray-50 font-mono"
+                        className="w-full bg-white border border-gray-300 rounded-lg p-3 text-black font-mono text-sm"
                       />
                       <button
                         onClick={() => {

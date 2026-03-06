@@ -37,7 +37,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { plan, payment_method, installments, payer } = body;
+    const { user_id, plan, payment_method, installments, payer, cpf } = body;
 
     if (!plan || !['monthly', 'yearly'].includes(plan)) {
       return new Response(JSON.stringify({ error: 'Plano inválido. Use "monthly" ou "yearly".' }), {
@@ -77,11 +77,18 @@ serve(async (req) => {
         last_name: payer?.last_name || user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
       };
 
-      // Adiciona identificação (CPF) se fornecida — obrigatório para PIX no Brasil
-      if (payer?.identification?.number) {
+      // Adiciona identificação (CPF) usando payer.cpf ou payer.identification.number ou body.cpf
+      const cpfNumber = payer?.cpf || payer?.identification?.number || cpf || undefined;
+      if (cpfNumber) {
         payerObj.identification = {
-          type: payer.identification.type || 'CPF',
-          number: String(payer.identification.number).replace(/\D/g, ''),
+          type: payer?.identification?.type || 'CPF',
+          number: String(cpfNumber).replace(/\D/g, ''),
+        };
+      } else {
+        // Fallback explícito conforme solicitado (evita undefined downstream)
+        payerObj.identification = {
+          type: 'CPF',
+          number: '00000000000',
         };
       }
 
