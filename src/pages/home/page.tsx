@@ -1223,7 +1223,7 @@ export default function HomePage() {
       </div>
 
       {/* Botões Flutuantes */}
-      <div className="fixed right-4 flex gap-3 z-40 top-[calc(env(safe-area-inset-top)+12px)] sm:top-[calc(env(safe-area-inset-top)+36px)]">
+      <div className="fixed right-4 flex gap-3 z-50 top-[calc(env(safe-area-inset-top)+6px)] sm:top-[calc(env(safe-area-inset-top)+36px)]">
         <button onClick={() => setShowReceitaModal(true)} className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center cursor-pointer hover:scale-105 transition-all shadow-md shadow-[#10B981]/40">
           <i className="ri-add-line text-white text-lg sm:text-xl"></i>
         </button>
