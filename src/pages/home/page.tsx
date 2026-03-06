@@ -163,18 +163,6 @@ export default function HomePage() {
 
   useEffect(() => { fetchBudgets(selectedGoalMonth); }, [selectedGoalMonth]);
 
-  // Sempre rola os carrosséis para a direita (mês atual) quando os dados mudam
-  useEffect(() => {
-    if (savingsRef.current) {
-      savingsRef.current.scrollLeft = savingsRef.current.scrollWidth;
-    }
-  }, [savingsData.length]);
-
-  useEffect(() => {
-    if (evolutionRef.current) {
-      evolutionRef.current.scrollLeft = evolutionRef.current.scrollWidth;
-    }
-  }, [evolutionData.length, currentMonth]);
 
   const handlePreviousMonth = () => {
     const [year, month] = selectedGoalMonth.split('-').map(Number);
@@ -298,6 +286,19 @@ export default function HomePage() {
     if (pct > 0) return 'Atenção';
     return 'Crítico';
   };
+
+  // Sempre rola os carrosséis para a direita (mês atual) quando os dados mudam
+  useEffect(() => {
+    if (savingsRef.current) {
+      savingsRef.current.scrollLeft = savingsRef.current.scrollWidth;
+    }
+  }, [savingsData.length]);
+
+  useEffect(() => {
+    if (evolutionRef.current) {
+      evolutionRef.current.scrollLeft = evolutionRef.current.scrollWidth;
+    }
+  }, [evolutionData.length, currentMonth]);
 
   const categoryData = budgets
     .filter(budget => {
