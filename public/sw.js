@@ -27,7 +27,18 @@ self.addEventListener('activate', (event) => {
           .filter((k) => k !== CACHE_NAME)
           .map((k) => caches.delete(k))
       )
-    ).then(() => self.clients.claim())
+    ).then(async () => {
+      try {
+        await self.clients.claim();
+        // Notifica todas as janelas controladas para que possam recarregar à vontade
+        const clientList = await self.clients.matchAll({ type: 'window' });
+        clientList.forEach((client) => {
+          try { client.postMessage({ type: 'RELOAD' }); } catch (e) { /* ignore */ }
+        });
+      } catch (e) {
+        // ignore
+      }
+    })
   );
 });
 

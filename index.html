@@ -176,6 +176,17 @@
     <script>
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js");
+
+        // Escuta mensagens do service worker (ex: RELOAD quando uma nova versão ativa)
+        navigator.serviceWorker.addEventListener('message', (ev) => {
+          try {
+            const data = ev?.data;
+            if (data && data.type === 'RELOAD') {
+              // Recarrega a página para evitar mismatched assets/hydration
+              window.location.reload();
+            }
+          } catch (e) { /* ignore */ }
+        });
       }
 
       window.addEventListener('beforeinstallprompt', (e) => {
