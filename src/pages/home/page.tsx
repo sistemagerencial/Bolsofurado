@@ -1223,7 +1223,7 @@ export default function HomePage() {
       </div>
 
       {/* Botões Flutuantes */}
-      <div className="fixed left-1/2 top-16 transform -translate-x-1/2 flex gap-3 z-40">
+      <div className="fixed right-4 sm:left-1/2 sm:top-12 sm:transform sm:-translate-x-1/2 flex gap-3 z-40" style={{ top: 'calc(env(safe-area-inset-top) + 14px)' }}>
         <button onClick={() => setShowReceitaModal(true)} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center cursor-pointer hover:scale-110 transition-all shadow-lg shadow-[#10B981]/50">
           <i className="ri-add-line text-white text-2xl sm:text-3xl"></i>
         </button>

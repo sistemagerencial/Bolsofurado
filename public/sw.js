@@ -44,34 +44,28 @@ self.addEventListener('fetch', (event) => {
   // Ignora arquivos de módulo JS/TS do Vite (evita travar o HMR)
   if (event.request.url.includes('/@') || event.request.url.includes('?t=')) return;
 
-  // Estratégia: Network first — só usa cache se não tiver rede
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Salva no cache apenas respostas válidas de navegação
-        if (
-          response &&
-          response.status === 200 &&
-          event.request.mode === 'navigate'
-        ) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {});
-        }
-        return response;
-      })
-      .catch(() => {
-        // Sem rede: tenta cache
-        return caches.match(event.request).then((cached) => {
-          if (cached) return cached;
+  // Se for navegação (carregando a SPA), responde primeiro com o index.html em cache
+  // para reduzir tela branca em redes lentas; tenta atualizar em background.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('/index.html').then((cachedIndex) => {
+        const networkFetch = fetch(event.request)
+          .then((response) => {
+            if (response && response.status === 200) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone)).catch(() => {});
+            }
+            return response;
+          })
+          .catch(() => null);
 
-          // Para navegação sem cache, serve o index.html (SPA)
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html').then((indexCached) => {
-              if (indexCached) return indexCached;
+        // Retorna o index em cache imediatamente se existir, caso contrário aguarda a rede
+        return cachedIndex || networkFetch.then((r) => r || cachedIndex).then((res) => {
+          if (res) return res;
 
-              // Página offline embutida
-              return new Response(
-                `<!DOCTYPE html>
+          // fallback offline page embutida
+          return new Response(
+            `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
@@ -96,13 +90,18 @@ self.addEventListener('fetch', (event) => {
   </div>
 </body>
 </html>`,
-                { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-              );
-            });
-          }
-
-          return new Response('Offline', { status: 503 });
+            { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
         });
       })
+    );
+    return;
+  }
+
+  // Para demais recursos, usamos network-first com fallback para cache
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => response)
+      .catch(() => caches.match(event.request).then((cached) => cached || new Response('Offline', { status: 503 })))
   );
 });
