@@ -160,16 +160,8 @@
     </script>
     <meta name="google-site-verification" content="Bk4il2jDjNq9xf258L2rc9kioZI4nrGEK14cHzFHWNg" />
 </head>
-      <style>
-        /* Evita tela branca/púrpura durante atualização/primeiro paint em mobile */
-        html, body { background: #0E0B16; }
-      </style>
   <body>
-    <div id="root">
-      <div id="initial-splash" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0E0B16">
-        <img src="https://hzzzoylajeitnvjglyku.supabase.co/storage/v1/object/public/logo/icon-192.png" alt="Bolso Furado" style="width:96px;height:96px;border-radius:12px" />
-      </div>
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
 
     <!-- Service Worker Registration -->
@@ -178,15 +170,34 @@
         navigator.serviceWorker.register("/sw.js");
 
         // Escuta mensagens do service worker (ex: RELOAD quando uma nova versão ativa)
-        navigator.serviceWorker.addEventListener('message', (ev) => {
-          try {
-            const data = ev?.data;
-            if (data && data.type === 'RELOAD') {
-              // Recarrega a página para evitar mismatched assets/hydration
+        (function () {
+          let needsReload = false;
+
+          const doReload = () => {
+            try {
+              if (document.visibilityState === 'visible') {
+                window.location.reload();
+              } else {
+                needsReload = true;
+              }
+            } catch (e) { /* ignore */ }
+          };
+
+          navigator.serviceWorker.addEventListener('message', (ev) => {
+            try {
+              const data = ev?.data;
+              if (data && data.type === 'RELOAD') {
+                doReload();
+              }
+            } catch (e) { /* ignore */ }
+          });
+
+          document.addEventListener('visibilitychange', () => {
+            if (needsReload && document.visibilityState === 'visible') {
               window.location.reload();
             }
-          } catch (e) { /* ignore */ }
-        });
+          });
+        })();
       }
 
       window.addEventListener('beforeinstallprompt', (e) => {
