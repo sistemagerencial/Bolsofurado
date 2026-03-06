@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import MainLayout from '../../components/layout/MainLayout';
 import { useInvestments } from '../../hooks/useInvestments';
 import { useTrades } from '../../hooks/useTrades';
@@ -225,6 +226,8 @@ export default function InvestimentosPage() {
     taxRegime: 'Progressivo',
     institution: '',
   });
+
+  
 
   const [newInvestmentExtraData, setNewInvestmentExtraData] = useState({
     planType: 'PGBL',
@@ -866,7 +869,9 @@ export default function InvestimentosPage() {
 
   const openEditTrade = (trade: Trade) => {
     setEditingTrade(trade);
-    setEditTradeData({ date: trade.date, symbol: trade.symbol, style: 'Day Trade', quantity: trade.quantity, price: trade.price, total: trade.total, notes: trade.notes || '' });
+    // normalize date to YYYY-MM-DD for the <input type="date" />
+    const normalizedDate = trade.date ? String(trade.date).split('T')[0] : new Date().toISOString().split('T')[0];
+    setEditTradeData({ date: normalizedDate, symbol: trade.symbol, style: 'Day Trade', quantity: trade.quantity, price: trade.price, total: trade.total, notes: trade.notes || '' });
     setEditTradeMode('simplificado');
     setEditTradeResultType(trade.total >= 0 ? 'gain' : 'loss');
     setEditTradeOrderType(trade.type as 'compra' | 'venda');
@@ -884,6 +889,8 @@ export default function InvestimentosPage() {
     setSelectedAssetForHistory(asset);
     setShowPriceHistoryModal(true);
   };
+
+  
 
   // ── Constantes de calendário ──
   const monthNames = [
@@ -2694,9 +2701,8 @@ export default function InvestimentosPage() {
         )}
 
         {/* ===== MODAL EDITAR TRADE ===== */}
-        {showEditTradeModal && editingTrade && (
+        {showEditTradeModal && editingTrade && createPortal(
           <>
-            {/* Backdrop fora do container flex */}
             <div
               className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
               onClick={() => setShowEditTradeModal(false)}
@@ -2760,7 +2766,8 @@ export default function InvestimentosPage() {
                 </div>
               </div>
             </div>
-          </>
+          </>,
+          document.body
         )}
 
         {/* ===== MODAL CONFIRMAR EXCLUSÃO DE TRADE ===== */}

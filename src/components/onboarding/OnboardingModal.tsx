@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 
 interface OnboardingStep {
@@ -169,9 +170,9 @@ export function OnboardingModal({ onClose, onFinish }: OnboardingModalProps) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [currentStep, animating]);
 
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200] p-4">
-      <div className="bg-[#0E0B16] border border-white/10 rounded-3xl w-full max-w-3xl shadow-2xl shadow-black/60 overflow-hidden relative">
+  const modal = (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200] p-3">
+      <div className="bg-[#0E0B16] border border-white/10 rounded-2xl w-full max-w-2xl shadow-xl shadow-black/50 overflow-hidden relative">
 
         {/* Skip button */}
         <button
@@ -208,7 +209,7 @@ export function OnboardingModal({ onClose, onFinish }: OnboardingModalProps) {
         </div>
 
         {/* Image area */}
-        <div className="relative h-48 sm:h-56 overflow-hidden">
+        <div className="relative h-40 sm:h-48 overflow-hidden">
           <img
             src={step.image}
             alt={step.title}
@@ -230,7 +231,7 @@ export function OnboardingModal({ onClose, onFinish }: OnboardingModalProps) {
 
         {/* Content */}
         <div
-          className={`px-6 sm:px-8 pb-6 sm:pb-8 transition-all duration-220 ${
+          className={`px-5 sm:px-6 pb-5 sm:pb-6 transition-all duration-220 ${
             animating
               ? direction === 'next'
                 ? 'opacity-0 translate-x-4'
@@ -239,9 +240,9 @@ export function OnboardingModal({ onClose, onFinish }: OnboardingModalProps) {
           }`}
         >
           {/* Icon + Title */}
-          <div className="flex items-center gap-4 mb-4 -mt-6 relative z-10">
-            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${step.iconBg} border border-white/10 flex items-center justify-center flex-shrink-0 shadow-lg`}>
-              <i className={`${step.icon} text-2xl`} style={{ color: step.iconColor }}></i>
+          <div className="flex items-center gap-3 mb-3 -mt-5 relative z-10">
+            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${step.iconBg} border border-white/10 flex items-center justify-center flex-shrink-0 shadow-md`}>
+              <i className={`${step.icon} text-xl`} style={{ color: step.iconColor }}></i>
             </div>
             <div>
               <h2 className="text-xl sm:text-2xl font-semibold text-[#F9FAFB]">{step.title}</h2>
@@ -250,11 +251,11 @@ export function OnboardingModal({ onClose, onFinish }: OnboardingModalProps) {
           </div>
 
           {/* Features grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
             {step.features.map((feature, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 hover:bg-white/[0.06] transition-all"
+                className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-lg px-3 py-2.5 hover:bg-white/[0.06] transition-all"
               >
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -303,7 +304,7 @@ export function OnboardingModal({ onClose, onFinish }: OnboardingModalProps) {
             {isLast ? (
               <button
                 onClick={handleFinish}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:from-[#6D28D9] hover:to-[#DB2777] text-white text-sm font-semibold transition-all cursor-pointer shadow-lg shadow-[#7C3AED]/30 whitespace-nowrap"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:from-[#6D28D9] hover:to-[#DB2777] text-white text-sm font-semibold transition-all cursor-pointer shadow-md shadow-[#7C3AED]/20 whitespace-nowrap"
               >
                 <i className="ri-check-line text-lg"></i>
                 Começar agora!
@@ -311,7 +312,7 @@ export function OnboardingModal({ onClose, onFinish }: OnboardingModalProps) {
             ) : (
               <button
                 onClick={handleNext}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:from-[#6D28D9] hover:to-[#DB2777] text-white text-sm font-semibold transition-all cursor-pointer shadow-lg shadow-[#7C3AED]/20 whitespace-nowrap"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:from-[#6D28D9] hover:to-[#DB2777] text-white text-sm font-semibold transition-all cursor-pointer shadow-md shadow-[#7C3AED]/15 whitespace-nowrap"
               >
                 Próximo
                 <i className="ri-arrow-right-s-line text-lg"></i>
@@ -322,4 +323,6 @@ export function OnboardingModal({ onClose, onFinish }: OnboardingModalProps) {
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

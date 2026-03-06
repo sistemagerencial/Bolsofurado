@@ -1223,18 +1223,18 @@ export default function HomePage() {
       </div>
 
       {/* Botões Flutuantes */}
-      <div className="fixed right-4 sm:left-1/2 sm:top-12 sm:transform sm:-translate-x-1/2 flex gap-3 z-40" style={{ top: 'calc(env(safe-area-inset-top) + 14px)' }}>
-        <button onClick={() => setShowReceitaModal(true)} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center cursor-pointer hover:scale-110 transition-all shadow-lg shadow-[#10B981]/50">
-          <i className="ri-add-line text-white text-2xl sm:text-3xl"></i>
+      <div className="fixed right-4 flex gap-3 z-40" style={{ top: 'calc(env(safe-area-inset-top) + 36px)' }}>
+        <button onClick={() => setShowReceitaModal(true)} className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center cursor-pointer hover:scale-105 transition-all shadow-md shadow-[#10B981]/40">
+          <i className="ri-add-line text-white text-lg sm:text-xl"></i>
         </button>
-        <button onClick={() => setShowDespesaModal(true)} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#EF4444] to-[#DC2626] flex items-center justify-center cursor-pointer hover:scale-110 transition-all shadow-lg shadow-[#EF4444]/50">
-          <i className="ri-subtract-line text-white text-2xl sm:text-3xl"></i>
+        <button onClick={() => setShowDespesaModal(true)} className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-[#EF4444] to-[#DC2626] flex items-center justify-center cursor-pointer hover:scale-105 transition-all shadow-md shadow-[#EF4444]/40">
+          <i className="ri-subtract-line text-white text-lg sm:text-xl"></i>
         </button>
       </div>
 
       {/* Modal Nova Receita */}
       {showReceitaModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowReceitaModal(false)}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 72px)' }} onClick={() => setShowReceitaModal(false)}>
           <div className="bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-[#16122A] p-6 border-b border-white/10 flex items-center justify-between z-10">
               <div className="flex items-center gap-3">
@@ -1268,7 +1268,7 @@ export default function HomePage() {
 
       {/* Modal Nova Despesa */}
       {showDespesaModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowDespesaModal(false)}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 72px)' }} onClick={() => setShowDespesaModal(false)}>
           <div className="bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-[#16122A] p-6 border-b border-white/10 flex items-center justify-between z-10">
               <div className="flex items-center gap-3">
@@ -1302,7 +1302,7 @@ export default function HomePage() {
 
       {/* Modal Nova Categoria */}
       {showNewCategoryModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowNewCategoryModal(false)}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-[60] p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 72px)' }} onClick={() => setShowNewCategoryModal(false)}>
           <div className="bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-white/10 flex items-center justify-between">
               <h3 className="text-xl font-bold text-[#F9FAFB]">Nova Categoria de {newCategoryModalType === 'receita' ? 'Receita' : 'Despesa'}</h3>

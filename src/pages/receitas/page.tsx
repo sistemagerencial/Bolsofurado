@@ -238,21 +238,21 @@ export default function ReceitasPage() {
               {loadingRevenues ? '...' : formatCurrency(totalRevenues)}
             </p>
           </div>
-          <div className="bg-[#16122A] rounded-xl p-4 sm:p-6 border border-white/5 shadow-lg shadow-[#7C3AED]/10">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#7C3AED]/20 to-[#EC4899]/20 flex items-center justify-center mb-3 sm:mb-4">
-              <i className="ri-bar-chart-line text-xl sm:text-2xl text-[#7C3AED]"></i>
+          <div className="bg-[#16122A] rounded-xl p-3 sm:p-4 border border-white/5 shadow-md shadow-[#7C3AED]/8">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-[#7C3AED]/20 to-[#EC4899]/20 flex items-center justify-center mb-2 sm:mb-3">
+              <i className="ri-bar-chart-line text-lg sm:text-xl text-[#7C3AED]"></i>
             </div>
-            <h3 className="text-xs sm:text-sm text-[#9CA3AF] mb-1 sm:mb-2">Lançamentos no Período</h3>
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#F9FAFB]">
+            <h3 className="text-xs sm:text-xs text-[#9CA3AF] mb-1">Lançamentos no Período</h3>
+            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-[#F9FAFB]">
               {loadingRevenues ? '...' : filteredRevenues.length}
             </p>
           </div>
-          <div className="bg-[#16122A] rounded-xl p-4 sm:p-6 border border-white/5 shadow-lg shadow-[#EC4899]/10 sm:col-span-2 lg:col-span-1">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#EC4899]/20 to-[#7C3AED]/20 flex items-center justify-center mb-3 sm:mb-4">
-              <i className="ri-line-chart-line text-xl sm:text-2xl text-[#EC4899]"></i>
+          <div className="bg-[#16122A] rounded-xl p-3 sm:p-4 border border-white/5 shadow-md shadow-[#EC4899]/8 sm:col-span-2 lg:col-span-1">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-[#EC4899]/20 to-[#7C3AED]/20 flex items-center justify-center mb-2 sm:mb-3">
+              <i className="ri-line-chart-line text-lg sm:text-xl text-[#EC4899]"></i>
             </div>
-            <h3 className="text-xs sm:text-sm text-[#9CA3AF] mb-1 sm:mb-2">Média Mensal</h3>
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#F9FAFB]">
+            <h3 className="text-xs sm:text-xs text-[#9CA3AF] mb-1">Média Mensal</h3>
+            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-[#F9FAFB]">
               {loadingRevenues ? '...' : formatCurrency(averageMonthly)}
             </p>
           </div>
