@@ -499,7 +499,7 @@ export default function CheckoutPage() {
   // Renderização da tela de pagamento PIX
   if (step === 'payment' && paymentData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
         {/* Header */}
         <div className="bg-white shadow-sm border-b">
           <div className="max-w-4xl mx-auto px-4 py-4">
@@ -586,7 +586,7 @@ export default function CheckoutPage() {
                       <img 
                         src={`data:image/png;base64,${paymentData.qr_code_base64}`}
                         alt="QR Code PIX" 
-                        className="w-48 h-48 mx-auto"
+                        className="w-36 h-36 sm:w-48 sm:h-48 mx-auto"
                       />
                     </div>
                   </div>
