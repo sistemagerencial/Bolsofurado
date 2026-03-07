@@ -1222,8 +1222,8 @@ export default function HomePage() {
         {sectionOrder.map(sectionId => renderSection(sectionId))}
       </div>
 
-      {/* Botões Flutuantes */}
-      <div className="fixed right-4 flex gap-3 z-50 top-[calc(env(safe-area-inset-top)-36px)] sm:top-[calc(env(safe-area-inset-top)+36px)] lg:top-20">
+      {/* Botões Flutuantes (restaurados ao canto inferior direito) */}
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 flex flex-col gap-3 z-60">
         <button onClick={() => setShowReceitaModal(true)} className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center cursor-pointer hover:scale-105 transition-all shadow-md shadow-[#10B981]/40">
           <i className="ri-add-line text-white text-lg sm:text-xl"></i>
         </button>

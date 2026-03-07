@@ -389,10 +389,10 @@ export default function DespesasPage() {
           </div>
         </div>
 
-        {/* Floating Action Button - fixo no canto superior direito */}
+        {/* Floating Action Button - restaurado no canto inferior direito */}
         <button
           onClick={openNewModal}
-          className="fixed top-4 right-4 lg:top-20 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-[#7C3AED] to-[#EC4899] rounded-full shadow-2xl shadow-[#7C3AED]/30 flex items-center justify-center hover:scale-110 transition-all cursor-pointer group z-40"
+          className="fixed bottom-20 lg:bottom-8 right-4 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-[#7C3AED] to-[#EC4899] rounded-full shadow-2xl shadow-[#7C3AED]/30 flex items-center justify-center hover:scale-110 transition-all cursor-pointer group z-60"
         >
           <i className="ri-add-line text-2xl lg:text-3xl text-white group-hover:rotate-90 transition-transform"></i>
         </button>

@@ -8,7 +8,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   useEffect(() => {
     const timeout = setTimeout(() => {
       onFinish();
-    }, 800);
+    }, 4000);
 
     return () => clearTimeout(timeout);
   }, [onFinish]);
@@ -65,7 +65,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
             className="h-full rounded-full"
             style={{
               background: 'linear-gradient(90deg, #7C3AED, #A78BFA)',
-              animation: 'progress 1.8s ease-in-out forwards',
+              animation: 'progress 3.6s ease-in-out forwards',
             }}
           />
         </div>
