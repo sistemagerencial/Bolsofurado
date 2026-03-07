@@ -624,9 +624,8 @@ export default function PlanejamentoPage() {
 
       {/* Modal Nova Meta */}
       {showModal && (
-        <div className="fixed inset-0 z-50 p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={closeModal}></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#16122A] border border-white/10 w-full sm:max-w-md shadow-xl rounded-xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/60 z-50 p-4 flex items-start justify-center" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 72px)' }} onClick={closeModal}>
+          <div className="bg-[#16122A] border border-white/10 w-full sm:max-w-md shadow-xl rounded-xl max-h-[90vh] flex flex-col overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 flex-shrink-0">
               <h2 className="text-base font-semibold text-white">Nova Meta</h2>
               <button
@@ -708,9 +707,8 @@ export default function PlanejamentoPage() {
 
       {/* Modal Confirmar Exclusão */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setDeleteConfirmId(null)}></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#16122A] border border-white/10 w-full sm:max-w-sm shadow-xl rounded-xl p-5">
+        <div className="fixed inset-0 bg-black/60 z-50 p-4 flex items-start justify-center" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 72px)' }} onClick={() => setDeleteConfirmId(null)}>
+          <div className="bg-[#16122A] border border-white/10 w-full sm:max-w-sm shadow-xl rounded-xl p-5 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-4 mb-4">
               <div className="w-11 h-11 rounded-lg bg-red-500/20 flex items-center justify-center flex-shrink-0">
                 <i className="ri-delete-bin-line text-xl text-red-400"></i>
