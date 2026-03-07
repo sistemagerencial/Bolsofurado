@@ -389,7 +389,7 @@ export default function ReceitasPage() {
         {/* Botão Flutuante (sempre fixo no canto superior direito) */}
         <button
           onClick={openNewModal}
-          className="fixed top-4 right-4 lg:top-16 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-[#22C55E] to-[#22C55E]/80 rounded-full shadow-2xl shadow-[#22C55E]/30 flex items-center justify-center hover:scale-110 transition-all cursor-pointer group z-40"
+          className="fixed top-4 right-4 lg:top-20 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-[#22C55E] to-[#22C55E]/80 rounded-full shadow-2xl shadow-[#22C55E]/30 flex items-center justify-center hover:scale-110 transition-all cursor-pointer group z-40"
         >
           <i className="ri-add-line text-2xl lg:text-3xl text-white group-hover:rotate-90 transition-transform"></i>
         </button>
@@ -397,7 +397,7 @@ export default function ReceitasPage() {
 
       {/* Notificação de Sucesso */}
       {showSuccess && (
-        <div className="fixed top-4 right-4 lg:top-16 bg-[#22C55E] text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
+        <div className="fixed top-4 right-4 lg:top-20 bg-[#22C55E] text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
           <i className="ri-check-line text-xl"></i>
           <span>{successMessage}</span>
         </div>
