@@ -175,7 +175,7 @@ export default function PatrimoniosPage() {
       <div className="p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
         {/* Notificação */}
         {notification && (
-          <div className="fixed top-4 right-4 bg-[#22C55E] text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
+          <div className="fixed top-4 right-4 lg:top-16 bg-[#22C55E] text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
             <i className="ri-check-line text-xl"></i>
             <span>{notification}</span>
           </div>

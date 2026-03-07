@@ -751,7 +751,7 @@ export default function RelatoriosPage() {
     <MainLayout>
       {/* Toast */}
       {toastMsg && (
-        <div className="fixed top-6 right-6 z-50 bg-[#22C55E] text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium">
+        <div className="fixed top-6 right-6 lg:top-16 z-50 bg-[#22C55E] text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium">
           <i className="ri-checkbox-circle-line mr-2"></i>
           {toastMsg}
         </div>

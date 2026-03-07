@@ -2105,7 +2105,7 @@ export default function InvestimentosPage() {
 
         {/* Mensagem de Sucesso */}
         {showSuccessMessage && (
-          <div className="fixed top-4 right-4 z-50">
+          <div className="fixed top-4 right-4 lg:top-16 z-50">
             <div className="bg-[#22C55E] text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
               <i className="ri-check-line text-2xl" />
               <div><p className="font-bold">Sucesso!</p><p className="text-sm opacity-90">Operação realizada com sucesso</p></div>
