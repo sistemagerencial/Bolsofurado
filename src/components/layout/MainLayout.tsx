@@ -32,12 +32,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const { profile, user, signOut } = useAuthContext();
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isPulling, setIsPulling] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const touchStartY = useRef<number>(0);
   const mainRef = useRef<HTMLDivElement>(null);
-  const PULL_THRESHOLD = 80;
 
   const isPaidOrLifetime = isLifetime || (hasAccess && !isTrial);
 
@@ -144,37 +139,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const firstName = getFirstName();
   const initials = firstName.charAt(0).toUpperCase();
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const scrollTop = mainRef.current?.scrollTop ?? 0;
-    if (scrollTop === 0) {
-      touchStartY.current = e.touches[0].clientY;
-      setIsPulling(true);
-    }
-  }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isPulling) return;
-    const scrollTop = mainRef.current?.scrollTop ?? 0;
-    if (scrollTop > 0) { setIsPulling(false); setPullDistance(0); return; }
-    const delta = e.touches[0].clientY - touchStartY.current;
-    if (delta > 0) {
-      setPullDistance(Math.min(delta * 0.5, PULL_THRESHOLD + 20));
-    }
-  }, [isPulling]);
-
-  const handleTouchEnd = useCallback(() => {
-    if (!isPulling) return;
-    setIsPulling(false);
-    if (pullDistance >= PULL_THRESHOLD) {
-      setIsRefreshing(true);
-      setPullDistance(PULL_THRESHOLD);
-      setTimeout(() => {
-        window.location.reload();
-      }, 600);
-    } else {
-      setPullDistance(0);
-    }
-  }, [isPulling, pullDistance]);
+  // Pull-to-refresh intentionally disabled: mobile drag should not reload the page
 
   const renderStatusBadge = () => {
     if (status === 'loading' || status === 'none') return null;
@@ -382,47 +347,15 @@ export function MainLayout({ children }: MainLayoutProps) {
         </div>
       </div>
 
-      {/* Indicador de Pull-to-Refresh */}
-      <div
-        className="fixed left-0 right-0 flex items-center justify-center z-30 pointer-events-none transition-all duration-200"
-        style={{
-          top: `calc(env(safe-area-inset-top) + 56px)`,
-          height: `${pullDistance}px`,
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          className="flex flex-col items-center justify-center gap-1 transition-all duration-200"
-          style={{ opacity: pullDistance > 20 ? Math.min((pullDistance - 20) / 40, 1) : 0 }}
-        >
-          {isRefreshing ? (
-            <div className="w-8 h-8 rounded-full border-2 border-[#7C3AED] border-t-transparent animate-spin" />
-          ) : (
-            <div
-              className="w-8 h-8 rounded-full bg-[#7C3AED]/20 border border-[#7C3AED]/40 flex items-center justify-center transition-transform duration-200"
-              style={{ transform: `rotate(${Math.min(pullDistance / PULL_THRESHOLD, 1) * 180}deg)` }}
-            >
-              <i className="ri-refresh-line text-[#7C3AED] text-base"></i>
-            </div>
-          )}
-          <span className="text-[10px] text-[#9CA3AF] whitespace-nowrap">
-            {isRefreshing ? 'Atualizando...' : pullDistance >= PULL_THRESHOLD ? 'Solte para atualizar' : 'Puxe para atualizar'}
-          </span>
-        </div>
-      </div>
+      {/* Pull-to-refresh removed to avoid accidental page reload on mobile drag */}
 
       {/* Conteúdo da página */}
       <main
         ref={mainRef}
         className="flex-1 bg-[#0E0B16] overflow-y-auto"
         style={{
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : 'translateY(0)',
-          transition: isPulling ? 'none' : 'transform 0.3s ease',
+          paddingBottom: 'env(safe-area-inset-bottom)'
         }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         <PageTransition>
           {children ?? <Outlet />}

@@ -444,11 +444,12 @@ export default function ReceitasPage() {
       {/* Modal Nova / Editar Receita */}
       {showModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 72px)' }}
           onClick={handleCloseModal}
         >
           <div
-            className="bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-lg shadow-2xl"
+            className="bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="border-b border-white/5 p-4 sm:p-6">
