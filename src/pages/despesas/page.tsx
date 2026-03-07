@@ -162,7 +162,10 @@ export default function DespesasPage() {
   const handleAddCategory = async () => {
     if (!newCategoryData.name.trim()) return;
     try {
-      await createCategory({ name: newCategoryData.name, type: 'despesa', color: newCategoryData.color });
+      const created = await createCategory({ name: newCategoryData.name, type: 'despesa', color: newCategoryData.color });
+      if (created && created.id) {
+        setFormData(prev => ({ ...prev, category: created.id }));
+      }
       setShowCategoryModal(false);
       setNewCategoryData({ name: '', color: '#7C3AED' });
     } catch (error) {
@@ -502,7 +505,10 @@ export default function DespesasPage() {
                       <i className="ri-add-line text-xl text-[#7C3AED]"></i>
                     </button>
                   </div>
-                </div>
+                  {categories.length === 0 && (
+                    <p className="text-xs text-[#9CA3AF] mt-1">Cadastre uma nova categoria clicando no +</p>
+                  )}
+                  </div>
                 <div>
                   <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Valor</label>
                   <div className="relative">

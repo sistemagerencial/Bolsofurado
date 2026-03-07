@@ -222,3 +222,10 @@ input:focus, textarea:focus, select:focus {
   background-color: rgb(var(--color-accent));
   color: rgb(var(--color-accent-foreground));
 }
+
+/* Desabilita pull-to-refresh / overscroll em dispositivos móveis */
+html, body, #root {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
