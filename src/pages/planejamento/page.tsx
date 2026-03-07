@@ -326,7 +326,7 @@ export default function PlanejamentoPage() {
           </div>
 
           {/* Linha 2: seletor de mês + copiar */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={() => shiftMonth(-1)}
@@ -364,11 +364,11 @@ export default function PlanejamentoPage() {
                     : <i className="ri-file-copy-line text-base"></i>
                   }
                 </div>
-                <span className="hidden sm:inline">{copying ? 'Copiando...' : 'Copiar Meta'}</span>
+                <span className="hidden sm:inline">{copying ? 'Copiando...' : 'Copiar metas'}</span>
                 <span className="sm:hidden">{copying ? '...' : 'Copiar'}</span>
               </button>
             
-            <p className="text-xs text-amber-400 mt-2 sm:mt-0">Ao fechar o mês, replique suas metas para o próximo mês clicando <strong>Copiar Meta</strong>.</p>
+            <p className="text-xs text-amber-400 mt-2 sm:mt-0">Ao fechar o mês, replique suas metas para o próximo mês clicando <strong>Copiar metas</strong>.</p>
           </div>
         </div>
 
