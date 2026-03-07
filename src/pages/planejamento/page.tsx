@@ -624,9 +624,9 @@ export default function PlanejamentoPage() {
 
       {/* Modal Nova Meta */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 p-4">
           <div className="absolute inset-0 bg-black/60" onClick={closeModal}></div>
-          <div className="relative bg-[#16122A] border border-white/10 w-full sm:max-w-md shadow-xl rounded-xl max-h-[90vh] flex flex-col">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#16122A] border border-white/10 w-full sm:max-w-md shadow-xl rounded-xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 flex-shrink-0">
               <h2 className="text-base font-semibold text-white">Nova Meta</h2>
               <button
@@ -708,9 +708,9 @@ export default function PlanejamentoPage() {
 
       {/* Modal Confirmar Exclusão */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setDeleteConfirmId(null)}></div>
-          <div className="relative bg-[#16122A] border border-white/10 w-full sm:max-w-sm shadow-xl rounded-t-2xl sm:rounded-xl p-5">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#16122A] border border-white/10 w-full sm:max-w-sm shadow-xl rounded-xl p-5">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-11 h-11 rounded-lg bg-red-500/20 flex items-center justify-center flex-shrink-0">
                 <i className="ri-delete-bin-line text-xl text-red-400"></i>
