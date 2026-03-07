@@ -18,6 +18,21 @@ export default function PlanejamentoPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
+  const shiftMonth = (delta: number) => {
+    const [yearStr, monthStr] = selectedMonth.split('-');
+    let year = parseInt(yearStr, 10);
+    let month = parseInt(monthStr, 10);
+    month += delta;
+    if (month < 1) {
+      month = 12;
+      year -= 1;
+    } else if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+    setSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
+  };
+
   const { budgets, loading, fetchBudgets, createBudget, deleteBudget, updateBudget } = useBudgets();
   const { categories } = useCategories('despesa');
   const { expenses } = useExpenses();
@@ -312,27 +327,50 @@ export default function PlanejamentoPage() {
 
           {/* Linha 2: seletor de mês + copiar */}
           <div className="flex items-center gap-2">
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="flex-1 min-w-0 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer bg-[#1E1A2E]"
-            />
-            <button
-              onClick={handleCopyPreviousMonth}
-              disabled={copying}
-              title={`Copiar metas de ${prevMonthLabel}`}
-              className="flex items-center gap-1.5 border border-gray-600 bg-[#1E1A2E] hover:bg-[#2A2440] text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap cursor-pointer disabled:opacity-60 flex-shrink-0"
-            >
-              <div className="w-4 h-4 flex items-center justify-center">
-                {copying
-                  ? <i className="ri-loader-4-line text-base animate-spin"></i>
-                  : <i className="ri-file-copy-line text-base"></i>
-                }
-              </div>
-              <span className="hidden sm:inline">{copying ? 'Copiando...' : 'Copiar Mês Anterior'}</span>
-              <span className="sm:hidden">{copying ? '...' : 'Copiar'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => shiftMonth(-1)}
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-[#F9FAFB] transition-all"
+                aria-label="Mês anterior"
+              >
+                <i className="ri-arrow-left-s-line text-lg" />
+              </button>
+
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="flex-1 min-w-0 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer bg-[#1E1A2E]"
+              />
+
+              <button
+                type="button"
+                onClick={() => shiftMonth(1)}
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-[#F9FAFB] transition-all"
+                aria-label="Próximo mês"
+              >
+                <i className="ri-arrow-right-s-line text-lg" />
+              </button>
+
+              <button
+                onClick={handleCopyPreviousMonth}
+                disabled={copying}
+                title={`Copiar metas de ${prevMonthLabel}`}
+                className="flex items-center gap-1.5 border border-transparent bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap cursor-pointer disabled:opacity-60 flex-shrink-0"
+              >
+                <div className="w-4 h-4 flex items-center justify-center">
+                  {copying
+                    ? <i className="ri-loader-4-line text-base animate-spin"></i>
+                    : <i className="ri-file-copy-line text-base"></i>
+                  }
+                </div>
+                <span className="hidden sm:inline">{copying ? 'Copiando...' : 'Copiar Meta'}</span>
+                <span className="sm:hidden">{copying ? '...' : 'Copiar'}</span>
+              </button>
+            </div>
+
+            <p className="text-xs text-amber-400 mt-2">Ao fechar o mês, replique suas metas para o próximo mês clicando <strong>Copiar Meta</strong>.</p>
           </div>
         </div>
 
