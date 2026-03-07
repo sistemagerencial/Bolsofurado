@@ -502,7 +502,10 @@ export default function ReceitasPage() {
                       <i className="ri-add-line text-xl text-[#22C55E]"></i>
                     </button>
                   </div>
-                  <p className="text-xs text-[#9CA3AF] mt-1">Cadastre uma nova categoria clicando no +</p>
+                  <p className="text-xs mt-1 flex items-center gap-2">
+                    <span className="text-amber-400">Cadastre uma nova categoria clicando no</span>
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#22C55E] text-white text-xs">+</span>
+                  </p>
                   </div>
                 <div>
                   <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Valor</label>
