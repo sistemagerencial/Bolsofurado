@@ -643,13 +643,17 @@ export default function DespesasPage() {
       {/* Modal - Nova / Editar Despesa */}
       {showModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 72px)' }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={handleCloseModal}
         >
           <div
-            className="relative bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto"
+            className="relative bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-lg shadow-2xl overflow-y-auto"
             onClick={e => e.stopPropagation()}
+            style={{
+              maxHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 48px)',
+              paddingTop: 'env(safe-area-inset-top)',
+              paddingBottom: 'env(safe-area-inset-bottom)'
+            }}
           >
             {/* Floating new button inside modal (resets form to new) */}
             <button
