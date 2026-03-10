@@ -24,18 +24,24 @@ export default function RecuperarSenhaPage() {
 
       if (resetError) throw resetError;
 
-      // Chama a função personalizada de e-mail de redefinição
+      // Chama a função personalizada de e-mail de redefinição (usando Supabase Functions)
       try {
-        await fetch(
-          'https://hzzzoylajeitnvjglyku.supabase.co/functions/v1/send-reset-password-email',
-          {
+        if (supabase.functions && typeof supabase.functions.invoke === 'function') {
+          await supabase.functions.invoke('send-reset-password-email', {
+            body: { email, resetLink },
+          });
+        } else {
+          // Fallback: tentar endpoint relativo ao SUPABASE_URL
+          const functionsEndpoint = `${(import.meta.env.VITE_PUBLIC_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL) as string}/functions/v1`;
+          await fetch(`${functionsEndpoint}/send-reset-password-email`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, resetLink }),
-          }
-        );
-      } catch (_) {
-        // Não bloqueia o fluxo se o e-mail personalizado falhar
+          });
+        }
+      } catch (e) {
+        // Não bloqueia o fluxo se o e-mail personalizado falhar, mas registra para depuração
+        console.warn('Falha ao chamar função de envio de e-mail de redefinição:', e);
       }
 
       setStep('sent');

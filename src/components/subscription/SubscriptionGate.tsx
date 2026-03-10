@@ -30,9 +30,9 @@ export function SubscriptionGate({ children }: { children?: React.ReactNode }) {
   const isYearlyExpired = planType === 'yearly' && status === 'expired';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
-      <div className="w-full max-w-2xl">
-        <div className="bg-white rounded-3xl shadow-2xl p-12 text-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6 overflow-x-hidden">
+      <div className="w-full max-w-2xl px-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-12 text-center overflow-hidden">
           {/* Icon */}
           <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <i className="ri-lock-line text-5xl text-white"></i>
@@ -136,7 +136,7 @@ export function SubscriptionGate({ children }: { children?: React.ReactNode }) {
           {/* CTA Button */}
           <button
             onClick={() => navigate(`/checkout?plan=${selectedPlan}&reason=expired`)}
-            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-bold py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 mb-6 whitespace-nowrap cursor-pointer"
+            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-bold py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 mb-6 sm:whitespace-nowrap cursor-pointer"
           >
             <i className="ri-vip-crown-line text-2xl"></i>
             Renovar {selectedPlan === 'monthly' ? 'Plano Mensal' : 'Plano Anual'} Agora
