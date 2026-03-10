@@ -156,6 +156,18 @@ export default function HomePage() {
   const despesaCatRef = useRef<HTMLSelectElement>(null);
   const despesaValorRef = useRef<HTMLInputElement>(null);
   const despesaDescRef = useRef<HTMLTextAreaElement>(null);
+  const despesaTypeRef = useRef<HTMLSelectElement>(null);
+  const despesaInstallmentsRef = useRef<HTMLInputElement>(null);
+  const despesaEntradaRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!showDespesaModal) return;
+    const v = despesaTypeRef.current?.value || 'normal';
+    const parc = document.getElementById('home-despesa-parcelado-fields');
+    const assin = document.getElementById('home-despesa-assinatura-note');
+    if (parc) (parc as HTMLElement).style.display = v === 'parcelado' ? 'grid' : 'none';
+    if (assin) (assin as HTMLElement).style.display = v === 'assinatura' ? 'block' : 'none';
+  }, [showDespesaModal]);
 
   const colorOptions = ['#22C55E', '#7C3AED', '#EC4899', '#FACC15', '#EF4444', '#8B5CF6', '#10B981', '#F97316'];
 
@@ -345,8 +357,50 @@ export default function HomePage() {
     const category_id = despesaCatRef.current?.value;
     const amount = parseFloat(despesaValorRef.current?.value || '0');
     if (!date || !category_id || !amount) return;
-    try { setSavingDespesa(true); const description = despesaDescRef.current?.value || ''; await createExpense({ date, category_id, description, amount }); setShowDespesaModal(false); }
-    catch (err) { console.error('Erro ao salvar despesa:', err); } finally { setSavingDespesa(false); }
+    setSavingDespesa(true);
+    try {
+      const description = despesaDescRef.current?.value || '';
+      const type = despesaTypeRef.current?.value || 'normal';
+      if (type === 'parcelado') {
+        const installments = Math.max(1, Number(despesaInstallmentsRef.current?.value) || 1);
+        const entradaNumber = parseFloat((despesaEntradaRef.current?.value || '0').toString().replace(',', '.')) || 0;
+        const restante = Math.max(0, amount - entradaNumber);
+        const base = Math.floor((restante / installments) * 100) / 100;
+        const remainder = Math.round((restante - base * installments) * 100) / 100;
+
+        if (entradaNumber > 0) {
+          await createExpense({ date, category_id, description: `${description} (entrada)`.trim(), amount: entradaNumber });
+          // parcelas começam em +30 dias
+          for (let j = 1; j <= installments; j++) {
+            const d = new Date(date + 'T00:00:00');
+            d.setDate(d.getDate() + 30 * j);
+            const installmentAmount = (j === 1) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
+            await createExpense({ date: d.toISOString().split('T')[0], category_id, description: `${description} (${j}/${installments})`.trim(), amount: installmentAmount });
+          }
+        } else {
+          // sem entrada: primeira parcela no dia da compra
+          for (let j = 0; j < installments; j++) {
+            const d = new Date(date + 'T00:00:00');
+            d.setDate(d.getDate() + 30 * j);
+            const installmentAmount = (j === 0) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
+            await createExpense({ date: d.toISOString().split('T')[0], category_id, description: `${description} (${j + 1}/${installments})`.trim(), amount: installmentAmount });
+          }
+        }
+      } else if (type === 'assinatura') {
+        for (let i = 0; i < 12; i++) {
+          const d = new Date(date + 'T00:00:00');
+          d.setDate(d.getDate() + 30 * i);
+          await createExpense({ date: d.toISOString().split('T')[0], category_id, description: description || 'Assinatura', amount });
+        }
+      } else {
+        await createExpense({ date, category_id, description, amount });
+      }
+      setShowDespesaModal(false);
+    } catch (err) {
+      console.error('Erro ao salvar despesa:', err);
+    } finally {
+      setSavingDespesa(false);
+    }
   };
 
   const openNewCategoryModal = (type: 'receita' | 'despesa') => {
@@ -1299,7 +1353,54 @@ export default function HomePage() {
                   <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Descrição (opcional)</label>
                   <textarea ref={despesaDescRef} placeholder="Observações adicionais (opcional)" className="w-full bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#EF4444] transition-all" rows={3} />
                 </div>
-                <div><label className="block text-sm font-medium text-[#F9FAFB] mb-2">Valor</label><div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">R$</span><input ref={despesaValorRef} type="number" step="0.01" min="0.01" placeholder="0,00" required className="w-full bg-[#0E0B16] border border-white/10 rounded-lg pl-12 pr-4 py-3 text-[#F9FAFB] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#EF4444] transition-all" /></div></div>
+                <div>
+                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Valor</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">R$</span>
+                    <input ref={despesaValorRef} type="number" step="0.01" min="0.01" placeholder="0,00" required className="w-full bg-[#0E0B16] border border-white/10 rounded-lg pl-12 pr-4 py-3 text-[#F9FAFB] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#EF4444] transition-all" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Tipo</label>
+                  <div className="flex gap-2">
+                    <select
+                      ref={despesaTypeRef}
+                      defaultValue="normal"
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        const parc = document.getElementById('home-despesa-parcelado-fields');
+                        const assin = document.getElementById('home-despesa-assinatura-note');
+                        if (parc) (parc as HTMLElement).style.display = v === 'parcelado' ? 'grid' : 'none';
+                        if (assin) (assin as HTMLElement).style.display = v === 'assinatura' ? 'block' : 'none';
+                      }}
+                      className="flex-1 bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] text-sm focus:outline-none focus:border-[#EF4444] transition-all cursor-pointer"
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="parcelado">Parcelado</option>
+                      <option value="assinatura">Assinatura</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Parcelado fields */}
+                <div id="home-despesa-parcelado-fields" className="grid grid-cols-2 gap-3" style={{ display: 'none' }}>
+                  <div>
+                    <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Número de Parcelas</label>
+                    <input ref={despesaInstallmentsRef} type="number" min={1} defaultValue={1} className="w-full bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] focus:outline-none focus:border-[#EF4444] transition-all text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Entrada (opcional)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">R$</span>
+                      <input ref={despesaEntradaRef} type="number" step="0.01" min="0" defaultValue={0} className="w-full bg-[#0E0B16] border border-white/10 rounded-lg pl-12 pr-4 py-3 text-[#F9FAFB] text-sm focus:outline-none focus:border-[#EF4444] transition-all" />
+                    </div>
+                  </div>
+                </div>
+
+                <div id="home-despesa-assinatura-note" style={{ display: 'none' }}>
+                  <p className="text-sm text-[#9CA3AF]">Assinatura: serão criados 12 lançamentos mensais a partir da data informada.</p>
+                </div>
                 <div className="flex gap-3 pt-4">
                   <button type="button" onClick={() => setShowDespesaModal(false)} className="flex-1 px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-[#F9FAFB] font-medium transition-all cursor-pointer whitespace-nowrap">Cancelar</button>
                   <button type="submit" disabled={savingDespesa} className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-[#EF4444] to-[#DC2626] hover:from-[#DC2626] hover:to-[#B91C1C] text-white font-semibold transition-all cursor-pointer shadow-lg shadow-[#EF4444]/20 whitespace-nowrap disabled:opacity-60">{savingDespesa ? 'Salvando...' : 'Adicionar'}</button>

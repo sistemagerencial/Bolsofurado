@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import MainLayout from '../../components/layout/MainLayout';
 import { useExpenses } from '../../hooks/useExpenses';
 import { useCategories } from '../../hooks/useCategories';
 import type { Expense } from '../../hooks/useExpenses';
 
 export default function DespesasPage() {
-  const { expenses, loading: loadingExpenses, createExpense, updateExpense, deleteExpense } = useExpenses();
+  const { expenses, loading: loadingExpenses, createExpense, updateExpense, deleteExpense, deleteExpenseGroup } = useExpenses();
   const { categories, loading: loadingCategories, createCategory } = useCategories('despesa');
 
   const now = new Date();
@@ -27,8 +28,12 @@ export default function DespesasPage() {
     date: new Date().toISOString().split('T')[0],
     category: '',
     amount: '',
+    type: 'normal', // 'normal' | 'parcelado' | 'assinatura'
+    installments: 1,
+    entrada: '',
     description: ''
   });
+  const [fabMenuVisible, setFabMenuVisible] = useState(false);
   
   const [newCategoryData, setNewCategoryData] = useState({
     name: '',
@@ -91,11 +96,72 @@ export default function DespesasPage() {
     return categories.find(cat => cat.id === categoryId);
   };
 
+  const getInstallmentBadge = (expense: Expense) => {
+    const desc = expense.description || '';
+    // procura padrão (N/M)
+    const m = desc.match(/\((\d+)\/(\d+)\)/);
+    if (m) {
+      const i = Number(m[1]);
+      const total = Number(m[2]);
+      if (/entrada/i.test(desc)) return 'Entrada';
+      // derivar data da primeira parcela a partir da data deste lançamento
+      const currentDate = new Date(expense.date + 'T00:00:00');
+      const purchaseDate = new Date(currentDate);
+      purchaseDate.setDate(purchaseDate.getDate() - 30 * (i - 1));
+      // diferença em meses entre purchaseDate e período selecionado
+      const monthsDiff = (selectedYear - purchaseDate.getFullYear()) * 12 + (selectedMonth - purchaseDate.getMonth());
+      const installmentIndex = monthsDiff + 1;
+      if (installmentIndex >= 1 && installmentIndex <= total) {
+        return `${installmentIndex}ª parcela de ${total}`;
+      }
+      return null;
+    }
+    // fallback procura 'Nx' (ex: '4x') para mostrar total
+    const m2 = desc.match(/(\d+)x\b/);
+    if (m2) {
+      const total = Number(m2[1]);
+      const currentDate = new Date(expense.date + 'T00:00:00');
+      const purchaseDate = new Date(currentDate);
+      const monthsDiff = (selectedYear - purchaseDate.getFullYear()) * 12 + (selectedMonth - purchaseDate.getMonth());
+      const installmentIndex = monthsDiff + 1;
+      if (installmentIndex >= 1 && installmentIndex <= total) {
+        return `${installmentIndex}ª parcela de ${total}`;
+      }
+      return null;
+    }
+    // marcar como entrada se a descrição contém '(entrada)'
+    if (/\(entrada\)/i.test(desc) || /\bentrada\b/i.test(desc)) return 'Entrada';
+    return null;
+  };
+
   const openNewModal = () => {
     setEditingExpense(null);
-    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '', description: '' });
+    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '', type: 'normal', installments: 1, entrada: '', description: '' });
     setShowModal(true);
   };
+
+  const openNewModalWithType = (type: string) => {
+    setEditingExpense(null);
+    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '', type, installments: 1, entrada: '', description: '' });
+    setShowModal(true);
+    setFabMenuVisible(false);
+  };
+
+  // abrir modal quando navegam para /despesas?new=1&type=...
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('new') === '1') {
+      const t = params.get('type') || 'normal';
+      openNewModalWithType(t);
+      // limpar query (opcional) — navegando sem preservar state
+      try {
+        const url = new URL(window.location.href);
+        url.search = '';
+        window.history.replaceState({}, '', url.toString());
+      } catch (e) {}
+    }
+  }, [location.search]);
 
   const openEditModal = (expense: Expense) => {
     setEditingExpense(expense);
@@ -103,6 +169,9 @@ export default function DespesasPage() {
       date: expense.date,
       category: expense.category_id || '',
       amount: String(expense.amount),
+      type: 'normal',
+      installments: 1,
+      entrada: '',
       description: expense.description || ''
     });
     setShowModal(true);
@@ -111,7 +180,7 @@ export default function DespesasPage() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingExpense(null);
-    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '', description: '' });
+    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '', type: 'normal', installments: 1, entrada: '', description: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,13 +200,70 @@ export default function DespesasPage() {
         });
         setSuccessMessage('Despesa atualizada com sucesso!');
       } else {
-        await createExpense({
-          date: formData.date,
-          category_id: formData.category || null,
-          description: (formData as any).description || '',
-          amount: amountNumber
-        });
-        setSuccessMessage('Despesa salva com sucesso!');
+        const tipo = (formData as any).type;
+        if (tipo === 'parcelado') {
+          const installments = Math.max(1, Number((formData as any).installments) || 1);
+          const entradaNumber = parseFloat(((formData as any).entrada || '').toString().replace(',', '.')) || 0;
+          const restante = Math.max(0, amountNumber - entradaNumber);
+          const base = Math.floor((restante / installments) * 100) / 100;
+          const remainder = Math.round((restante - base * installments) * 100) / 100;
+          if (entradaNumber > 0) {
+            await createExpense({
+              date: formData.date,
+              category_id: formData.category || null,
+              description: `${(formData as any).description || ''} (entrada)`.trim(),
+              amount: entradaNumber
+            });
+            // parcelas começam em +30 dias
+            for (let j = 1; j <= installments; j++) {
+              const daysToAdd = 30 * j;
+              const d = new Date(formData.date + 'T00:00:00');
+              d.setDate(d.getDate() + daysToAdd);
+              const installmentAmount = (j === 1) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
+              await createExpense({
+                date: d.toISOString().split('T')[0],
+                category_id: formData.category || null,
+                description: `${(formData as any).description || ''} (${j}/${installments})`.trim(),
+                amount: installmentAmount
+              });
+            }
+          } else {
+            // sem entrada: primeira parcela é no dia da compra
+            for (let j = 0; j < installments; j++) {
+              const daysToAdd = 30 * j;
+              const d = new Date(formData.date + 'T00:00:00');
+              d.setDate(d.getDate() + daysToAdd);
+              const installmentAmount = (j === 0) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
+              await createExpense({
+                date: d.toISOString().split('T')[0],
+                category_id: formData.category || null,
+                description: `${(formData as any).description || ''} (${j + 1}/${installments})`.trim(),
+                amount: installmentAmount
+              });
+            }
+          }
+          setSuccessMessage('Despesa parcelada salva com sucesso!');
+        } else if (tipo === 'assinatura') {
+          for (let i = 0; i < 12; i++) {
+            const d = new Date(formData.date + 'T00:00:00');
+            d.setDate(d.getDate() + 30 * i);
+            await createExpense({
+              date: d.toISOString().split('T')[0],
+              category_id: formData.category || null,
+              description: (formData as any).description || 'Assinatura',
+              amount: amountNumber
+            });
+          }
+          setSuccessMessage('Assinatura salva (12 meses) com sucesso!');
+        } else {
+          await createExpense({
+            date: formData.date,
+            category_id: formData.category || null,
+            description: (formData as any).description || '',
+            amount: amountNumber
+          });
+          setSuccessMessage('Despesa salva com sucesso!');
+        }
       }
       handleCloseModal();
       setShowSuccess(true);
@@ -153,7 +279,18 @@ export default function DespesasPage() {
     if (!confirmDeleteId) return;
     setDeleting(true);
     try {
-      await deleteExpense(confirmDeleteId);
+      // se for parcela/entrada, deletar grupo
+      const exp = expenses.find(e => e.id === confirmDeleteId);
+      if (exp) {
+        const desc = exp.description || '';
+        if (/\(\d+\/\d+\)/.test(desc) || /\(entrada\)/i.test(desc)) {
+          await deleteExpenseGroup(confirmDeleteId as string);
+        } else {
+          await deleteExpense(confirmDeleteId);
+        }
+      } else {
+        await deleteExpense(confirmDeleteId);
+      }
       setConfirmDeleteId(null);
     } catch (error) {
       console.error('Erro ao excluir despesa:', error);
@@ -315,14 +452,28 @@ export default function DespesasPage() {
                       </button>
                     </div>
                   </div>
-                  {category && (
-                    <span
-                      className="inline-block px-2.5 py-1 rounded-full text-xs font-semibold"
-                      style={{ backgroundColor: `${category.color}20`, color: category.color }}
-                    >
-                      {category.name}
-                    </span>
-                  )}
+                          {category && (
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="inline-block px-2.5 py-1 rounded-full text-xs font-semibold"
+                                style={{ backgroundColor: `${category.color}20`, color: category.color }}
+                              >
+                                {category.name}
+                              </span>
+                              {(() => {
+                                const badge = getInstallmentBadge(expense);
+                                if (!badge) return null;
+                                return (
+                                  <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-[#F59E0B]/20 text-[#F59E0B]">
+                                    {badge}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                          )}
+                          {expense.description && (
+                            <p className="text-xs text-[#FACC15] mt-2 break-words">{expense.description}</p>
+                          )}
                 </div>
               );
             })
@@ -354,12 +505,26 @@ export default function DespesasPage() {
                         <td className="py-4 px-6 text-sm text-[#F9FAFB]">{formatDate(expense.date)}</td>
                         <td className="py-4 px-6">
                           {category && (
-                            <span
-                              className="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                              style={{ backgroundColor: `${category.color}20`, color: category.color }}
-                            >
-                              {category.name}
-                            </span>
+                            <div className="flex items-center justify-start gap-2">
+                              <span
+                                className="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+                                style={{ backgroundColor: `${category.color}20`, color: category.color }}
+                              >
+                                {category.name}
+                              </span>
+                              {(() => {
+                                const badge = getInstallmentBadge(expense);
+                                if (!badge) return null;
+                                return (
+                                  <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-[#F59E0B]/20 text-[#F59E0B]">
+                                    {badge}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                          )}
+                          {expense.description && (
+                            <div className="text-xs text-[#FACC15] mt-1">{expense.description}</div>
                           )}
                         </td>
                         <td className="py-4 px-6 text-right text-sm font-semibold text-[#EC4899]">
@@ -393,12 +558,24 @@ export default function DespesasPage() {
         </div>
 
         {/* Floating Action Button - restaurado no canto inferior direito */}
-        <button
-          onClick={openNewModal}
-          className="fixed bottom-20 lg:bottom-8 right-4 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-[#7C3AED] to-[#EC4899] rounded-full shadow-2xl shadow-[#7C3AED]/30 flex items-center justify-center hover:scale-110 transition-all cursor-pointer group z-60"
-        >
-          <i className="ri-add-line text-2xl lg:text-3xl text-white group-hover:rotate-90 transition-transform"></i>
-        </button>
+        <div className="fixed bottom-20 lg:bottom-8 right-4 lg:right-8 z-60">
+          <div className="relative">
+            {fabMenuVisible && (
+              <div className="mb-2 flex flex-col items-end gap-2">
+                <button onClick={() => openNewModalWithType('assinatura')} className="px-3 py-2 rounded-lg bg-[#0ea5ff] text-white text-sm">Assinatura</button>
+                <button onClick={() => openNewModalWithType('parcelado')} className="px-3 py-2 rounded-lg bg-[#f97316] text-white text-sm">Parcelado</button>
+                <button onClick={() => openNewModalWithType('normal')} className="px-3 py-2 rounded-lg bg-[#10b981] text-white text-sm">Normal</button>
+              </div>
+            )}
+            <button
+              onClick={() => setFabMenuVisible(v => !v)}
+              className="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-[#7C3AED] to-[#EC4899] rounded-full shadow-2xl shadow-[#7C3AED]/30 flex items-center justify-center hover:scale-110 transition-all cursor-pointer group"
+              title="Nova despesa"
+            >
+              <i className="ri-add-line text-2xl lg:text-3xl text-white group-hover:rotate-90 transition-transform"></i>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Notificação de Sucesso */}
@@ -455,9 +632,17 @@ export default function DespesasPage() {
           onClick={handleCloseModal}
         >
           <div
-            className="bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto"
+            className="relative bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
+            {/* Floating new button inside modal (resets form to new) */}
+            <button
+              onClick={(e) => { e.stopPropagation(); openNewModal(); }}
+              className="absolute top-4 right-4 w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-[#7C3AED] to-[#EC4899] rounded-full shadow-2xl shadow-[#7C3AED]/30 flex items-center justify-center hover:scale-105 transition-all cursor-pointer z-50"
+              title="Nova despesa"
+            >
+              <i className="ri-add-line text-lg lg:text-2xl text-white"></i>
+            </button>
             <div className="border-b border-white/5 p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -540,6 +725,55 @@ export default function DespesasPage() {
                     />
                   </div>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Tipo</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={(formData as any).type}
+                      onChange={e => setFormData({ ...formData, type: e.target.value })}
+                      className="flex-1 bg-[#0E0B16] border border-white/5 rounded-xl px-4 py-3 text-[#F9FAFB] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm cursor-pointer"
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="parcelado">Parcelado</option>
+                      <option value="assinatura">Assinatura</option>
+                    </select>
+                  </div>
+                </div>
+
+                {(formData as any).type === 'parcelado' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Número de Parcelas</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={(formData as any).installments}
+                        onChange={e => setFormData({ ...formData, installments: Number(e.target.value) })}
+                        className="w-full bg-[#0E0B16] border border-white/5 rounded-xl px-4 py-3 text-[#F9FAFB] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Entrada (opcional)</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]">R$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={(formData as any).entrada}
+                          onChange={e => setFormData({ ...formData, entrada: e.target.value })}
+                          className="w-full bg-[#0E0B16] border border-white/5 rounded-xl pl-12 pr-4 py-3 text-[#F9FAFB] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {(formData as any).type === 'assinatura' && (
+                  <div>
+                    <p className="text-sm text-[#9CA3AF]">Assinatura: serão criados 12 lançamentos mensais a partir da data informada.</p>
+                  </div>
+                )}
               </div>
               <div className="flex gap-3 sm:gap-4 mt-6 sm:mt-8">
                 <button
