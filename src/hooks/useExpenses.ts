@@ -178,6 +178,134 @@ export const useExpenses = () => {
     }
   };
 
+  const updateExpenseGroup = async (id: string, expenseData: {
+    date?: string;
+    category_id?: string | null;
+    description?: string;
+    amount?: number;
+  }) => {
+    try {
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data: targetData, error: targetErr } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (targetErr) throw targetErr;
+      const target = targetData as Expense;
+      const desc = target.description || '';
+
+      // parcela: (i/total)
+      const m = desc.match(/\((\d+)\/(\d+)\)/);
+      if (m) {
+        const i = Number(m[1]);
+        const total = Number(m[2]);
+        const currentDate = new Date(target.date + 'T00:00:00');
+        const purchaseDate = new Date(currentDate);
+        purchaseDate.setDate(purchaseDate.getDate() - 30 * (i - 1));
+
+        const dates: string[] = [];
+        for (let j = 1; j <= total; j++) {
+          const d = new Date(purchaseDate);
+          d.setDate(d.getDate() + 30 * (j - 1));
+          dates.push(d.toISOString().split('T')[0]);
+        }
+
+        const updates: any = {};
+        if (expenseData.date) updates.date = expenseData.date;
+        if (typeof expenseData.category_id !== 'undefined') updates.category_id = expenseData.category_id;
+        if (typeof expenseData.description !== 'undefined') updates.description = expenseData.description;
+        if (typeof expenseData.amount !== 'undefined') updates.amount = expenseData.amount;
+
+        const { data: updData, error: updErr } = await supabase
+          .from('expenses')
+          .update(updates)
+          .in('date', dates)
+          .eq('user_id', user.id);
+        if (updErr) throw updErr;
+        await fetchExpenses(user.id);
+        return updData;
+      }
+
+      // assinatura: procurar lançamentos com mesma descrição e categoria
+      // deletar/atualizar apenas a partir da data selecionada (pra frente)
+      const relatedDesc = desc;
+      const { data: related, error: relatedErr } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('category_id', target.category_id)
+        .eq('description', relatedDesc)
+        .gte('date', target.date);
+      if (!relatedErr && related && related.length >= 1) {
+        const updates: any = {};
+        if (expenseData.date) updates.date = expenseData.date;
+        if (typeof expenseData.category_id !== 'undefined') updates.category_id = expenseData.category_id;
+        if (typeof expenseData.description !== 'undefined') updates.description = expenseData.description;
+        if (typeof expenseData.amount !== 'undefined') updates.amount = expenseData.amount;
+
+        const ids = related.map((r: any) => r.id);
+        const { data: updData2, error: updErr2 } = await supabase
+          .from('expenses')
+          .update(updates)
+          .in('id', ids);
+        if (updErr2) throw updErr2;
+        await fetchExpenses(user.id);
+        return updData2;
+      }
+
+      // se for entrada: busca parcelas relacionadas e atualiza todas
+      if (/\(entrada\)/i.test(desc)) {
+        const entryDate = target.date;
+        const { data: related2, error: relatedErr2 } = await supabase
+          .from('expenses')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('date', entryDate)
+          .eq('category_id', target.category_id);
+        if (relatedErr2) throw relatedErr2;
+        const toUpdate = (related2 || []).filter((r: any) => /\(\d+\/\d+\)/.test(r.description || '') || /\(entrada\)/i.test(r.description || ''));
+        const ids = toUpdate.map((r: any) => r.id);
+        if (ids.length > 0) {
+          const updates: any = {};
+          if (expenseData.date) updates.date = expenseData.date;
+          if (typeof expenseData.category_id !== 'undefined') updates.category_id = expenseData.category_id;
+          if (typeof expenseData.description !== 'undefined') updates.description = expenseData.description;
+          if (typeof expenseData.amount !== 'undefined') updates.amount = expenseData.amount;
+
+          const { data: updData3, error: updErr3 } = await supabase
+            .from('expenses')
+            .update(updates)
+            .in('id', ids);
+          if (updErr3) throw updErr3;
+          await fetchExpenses(user.id);
+          return updData3;
+        }
+      }
+
+      // fallback: update single
+      const { data, error: updateError } = await supabase
+        .from('expenses')
+        .update({
+          date: expenseData.date || target.date,
+          category_id: expenseData.category_id ?? target.category_id,
+          description: expenseData.description ?? target.description,
+          amount: typeof expenseData.amount !== 'undefined' ? expenseData.amount : target.amount
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      if (updateError) throw updateError;
+      setExpenses(prev => prev.map(exp => exp.id === id ? data : exp));
+      return data;
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Erro ao atualizar grupo de despesas:', err);
+      throw err;
+    }
+  };
+
   const updateExpense = async (id: string, expenseData: {
     date: string;
     category_id: string | null;
@@ -217,6 +345,7 @@ export const useExpenses = () => {
     updateExpense,
     deleteExpense,
     deleteExpenseGroup,
+    updateExpenseGroup,
     refetch: () => user?.id ? fetchExpenses(user.id) : Promise.resolve()
   };
 };

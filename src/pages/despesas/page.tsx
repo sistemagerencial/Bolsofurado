@@ -6,7 +6,7 @@ import { useCategories } from '../../hooks/useCategories';
 import type { Expense } from '../../hooks/useExpenses';
 
 export default function DespesasPage() {
-  const { expenses, loading: loadingExpenses, createExpense, updateExpense, deleteExpense, deleteExpenseGroup } = useExpenses();
+  const { expenses, loading: loadingExpenses, createExpense, updateExpense, deleteExpense, deleteExpenseGroup, updateExpenseGroup } = useExpenses();
   const { categories, loading: loadingCategories, createCategory } = useCategories('despesa');
 
   const now = new Date();
@@ -192,14 +192,29 @@ export default function DespesasPage() {
     setSaving(true);
     try {
       if (editingExpense) {
-        await updateExpense(editingExpense.id, {
-          date: formData.date,
-          category_id: formData.category || null,
-          description: (formData as any).description || editingExpense.description || '',
-          amount: amountNumber
-        });
-        setSuccessMessage('Despesa atualizada com sucesso!');
-      } else {
+          const isParcel = /\(\d+\/\d+\)/.test(editingExpense.description || '');
+          const isEntrada = /\(entrada\)/i.test(editingExpense.description || '');
+          const isAssinatura = /assinatura/i.test(editingExpense.description || '');
+
+          const payload = {
+            date: formData.date,
+            category_id: formData.category || null,
+            description: (formData as any).description || editingExpense.description || '',
+            amount: amountNumber
+          };
+
+          try {
+            if (isParcel || isAssinatura || isEntrada) {
+              await updateExpenseGroup(editingExpense.id, payload);
+            } else {
+              await updateExpense(editingExpense.id, payload);
+            }
+          } catch (err) {
+            console.error('Erro ao atualizar despesa:', err);
+          }
+
+          setSuccessMessage('Despesa atualizada com sucesso!');
+        } else {
         const tipo = (formData as any).type;
         if (tipo === 'parcelado') {
           const installments = Math.max(1, Number((formData as any).installments) || 1);
@@ -275,6 +290,7 @@ export default function DespesasPage() {
     }
   };
 
+    
   const handleDelete = async () => {
     if (!confirmDeleteId) return;
     setDeleting(true);
