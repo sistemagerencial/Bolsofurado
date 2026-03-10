@@ -26,7 +26,8 @@ export default function ReceitasPage() {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     category: '',
-    amount: ''
+    amount: '',
+    description: ''
   });
   const [newCategoryData, setNewCategoryData] = useState({
     name: '',
@@ -90,7 +91,7 @@ export default function ReceitasPage() {
 
   const openNewModal = () => {
     setEditingRevenue(null);
-    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '' });
+    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '', description: '' });
     setShowModal(true);
   };
 
@@ -99,7 +100,8 @@ export default function ReceitasPage() {
     setFormData({
       date: revenue.date,
       category: revenue.category_id || '',
-      amount: String(revenue.amount)
+      amount: String(revenue.amount),
+      description: revenue.description || ''
     });
     setShowModal(true);
   };
@@ -107,7 +109,7 @@ export default function ReceitasPage() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingRevenue(null);
-    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '' });
+    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '', description: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -120,7 +122,7 @@ export default function ReceitasPage() {
         await updateRevenue(editingRevenue.id, {
           date: formData.date,
           category_id: formData.category || null,
-          description: editingRevenue.description || '',
+          description: (formData as any).description || editingRevenue.description || '',
           amount: amountNumber
         });
         setSuccessMessage('Receita atualizada com sucesso!');
@@ -128,7 +130,7 @@ export default function ReceitasPage() {
         await createRevenue({
           date: formData.date,
           category_id: formData.category || null,
-          description: '',
+          description: (formData as any).description || '',
           amount: amountNumber
         });
         setSuccessMessage('Receita salva com sucesso!');
@@ -507,6 +509,16 @@ export default function ReceitasPage() {
                     <span className="text-amber-400">Cadastre uma nova categoria clicando no</span>
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#22C55E] text-white text-xs">+</span>
                   </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Descrição (opcional)</label>
+                  <textarea
+                    value={(formData as any).description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Observações adicionais (opcional)"
+                    className="w-full bg-[#0E0B16] border border-white/5 rounded-xl px-4 py-3 text-[#F9FAFB] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm"
+                    rows={3}
+                  />
                   </div>
                 <div>
                   <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Valor</label>

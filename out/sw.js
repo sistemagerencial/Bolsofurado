@@ -1,0 +1,118 @@
+const CACHE_NAME = 'bolsofurado-v2';
+
+// Apenas o essencial para funcionar offline
+const APP_SHELL = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+];
+
+self.addEventListener('install', (event) => {
+  // Instala sem bloquear — não espera o cache
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(APP_SHELL).catch(() => {
+        // Ignora erros de cache na instalação
+      });
+    })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((k) => k !== CACHE_NAME)
+          .map((k) => caches.delete(k))
+      )
+    ).then(async () => {
+      try {
+        await self.clients.claim();
+        // Notifica todas as janelas controladas para que possam recarregar à vontade
+        const clientList = await self.clients.matchAll({ type: 'window' });
+        clientList.forEach((client) => {
+          try { client.postMessage({ type: 'RELOAD' }); } catch (e) { /* ignore */ }
+        });
+      } catch (e) {
+        // ignore
+      }
+    })
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  // Ignora requisições não-GET
+  if (event.request.method !== 'GET') return;
+
+  // Ignora chamadas externas (Supabase, APIs, CDN)
+  if (!event.request.url.startsWith(self.location.origin)) return;
+
+  // Ignora chamadas de API do Supabase
+  if (event.request.url.includes('supabase.co')) return;
+
+  // Ignora arquivos de módulo JS/TS do Vite (evita travar o HMR)
+  if (event.request.url.includes('/@') || event.request.url.includes('?t=')) return;
+
+  // Se for navegação (carregando a SPA), responde primeiro com o index.html em cache
+  // para reduzir tela branca em redes lentas; tenta atualizar em background.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('/index.html').then((cachedIndex) => {
+        const networkFetch = fetch(event.request)
+          .then((response) => {
+            if (response && response.status === 200) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone)).catch(() => {});
+            }
+            return response;
+          })
+          .catch(() => null);
+
+        // Retorna o index em cache imediatamente se existir, caso contrário aguarda a rede
+        return cachedIndex || networkFetch.then((r) => r || cachedIndex).then((res) => {
+          if (res) return res;
+
+          // fallback offline page embutida
+          return new Response(
+            `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Sem conexão – Bolso Furado</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0E0B16;color:#F9FAFB;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+    .card{background:#16122A;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:40px 32px;max-width:360px;width:100%;text-align:center}
+    .icon{font-size:56px;margin-bottom:20px}
+    h1{font-size:22px;font-weight:700;margin-bottom:10px}
+    p{color:#9CA3AF;font-size:14px;line-height:1.6;margin-bottom:24px}
+    button{background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📡</div>
+    <h1>Sem rede</h1>
+    <p>Você está sem conexão com a internet. Verifique seu Wi-Fi ou dados móveis e tente novamente.</p>
+    <button onclick="location.reload()">Tentar novamente</button>
+  </div>
+</body>
+</html>`,
+            { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
+        });
+      })
+    );
+    return;
+  }
+
+  // Para demais recursos, usamos network-first com fallback para cache
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => response)
+      .catch(() => caches.match(event.request).then((cached) => cached || new Response('Offline', { status: 503 })))
+  );
+});

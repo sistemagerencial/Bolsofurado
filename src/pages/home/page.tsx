@@ -151,9 +151,11 @@ export default function HomePage() {
   const receitaDateRef = useRef<HTMLInputElement>(null);
   const receitaCatRef = useRef<HTMLSelectElement>(null);
   const receitaValorRef = useRef<HTMLInputElement>(null);
+  const receitaDescRef = useRef<HTMLTextAreaElement>(null);
   const despesaDateRef = useRef<HTMLInputElement>(null);
   const despesaCatRef = useRef<HTMLSelectElement>(null);
   const despesaValorRef = useRef<HTMLInputElement>(null);
+  const despesaDescRef = useRef<HTMLTextAreaElement>(null);
 
   const colorOptions = ['#22C55E', '#7C3AED', '#EC4899', '#FACC15', '#EF4444', '#8B5CF6', '#10B981', '#F97316'];
 
@@ -333,7 +335,7 @@ export default function HomePage() {
     const category_id = receitaCatRef.current?.value;
     const amount = parseFloat(receitaValorRef.current?.value || '0');
     if (!date || !category_id || !amount) return;
-    try { setSavingReceita(true); await createRevenue({ date, category_id, description: '', amount }); setShowReceitaModal(false); }
+    try { setSavingReceita(true); const description = receitaDescRef.current?.value || ''; await createRevenue({ date, category_id, description, amount }); setShowReceitaModal(false); }
     catch (err) { console.error('Erro ao salvar receita:', err); } finally { setSavingReceita(false); }
   };
 
@@ -343,7 +345,7 @@ export default function HomePage() {
     const category_id = despesaCatRef.current?.value;
     const amount = parseFloat(despesaValorRef.current?.value || '0');
     if (!date || !category_id || !amount) return;
-    try { setSavingDespesa(true); await createExpense({ date, category_id, description: '', amount }); setShowDespesaModal(false); }
+    try { setSavingDespesa(true); const description = despesaDescRef.current?.value || ''; await createExpense({ date, category_id, description, amount }); setShowDespesaModal(false); }
     catch (err) { console.error('Erro ao salvar despesa:', err); } finally { setSavingDespesa(false); }
   };
 
@@ -1255,6 +1257,10 @@ export default function HomePage() {
                     <button type="button" onClick={() => openNewCategoryModal('receita')} className="w-12 h-12 rounded-lg bg-[#22C55E]/20 hover:bg-[#22C55E]/30 flex items-center justify-center transition-all cursor-pointer flex-shrink-0"><i className="ri-add-line text-xl text-[#22C55E]"></i></button>
                   </div>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Descrição (opcional)</label>
+                  <textarea ref={receitaDescRef} placeholder="Observações adicionais (opcional)" className="w-full bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#22C55E] transition-all" rows={3} />
+                </div>
                 <div><label className="block text-sm font-medium text-[#F9FAFB] mb-2">Valor</label><div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">R$</span><input ref={receitaValorRef} type="number" step="0.01" min="0.01" placeholder="0,00" required className="w-full bg-[#0E0B16] border border-white/10 rounded-lg pl-12 pr-4 py-3 text-[#F9FAFB] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#22C55E] transition-all" /></div></div>
                 <div className="flex gap-3 pt-4">
                   <button type="button" onClick={() => setShowReceitaModal(false)} className="flex-1 px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-[#F9FAFB] font-medium transition-all cursor-pointer whitespace-nowrap">Cancelar</button>
@@ -1288,6 +1294,10 @@ export default function HomePage() {
                     </select>
                     <button type="button" onClick={() => openNewCategoryModal('despesa')} className="w-12 h-12 rounded-lg bg-[#EF4444]/20 hover:bg-[#EF4444]/30 flex items-center justify-center transition-all cursor-pointer flex-shrink-0"><i className="ri-add-line text-xl text-[#EF4444]"></i></button>
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Descrição (opcional)</label>
+                  <textarea ref={despesaDescRef} placeholder="Observações adicionais (opcional)" className="w-full bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#EF4444] transition-all" rows={3} />
                 </div>
                 <div><label className="block text-sm font-medium text-[#F9FAFB] mb-2">Valor</label><div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">R$</span><input ref={despesaValorRef} type="number" step="0.01" min="0.01" placeholder="0,00" required className="w-full bg-[#0E0B16] border border-white/10 rounded-lg pl-12 pr-4 py-3 text-[#F9FAFB] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#EF4444] transition-all" /></div></div>
                 <div className="flex gap-3 pt-4">

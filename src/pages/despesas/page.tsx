@@ -26,8 +26,10 @@ export default function DespesasPage() {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     category: '',
-    amount: ''
+    amount: '',
+    description: ''
   });
+  
   const [newCategoryData, setNewCategoryData] = useState({
     name: '',
     color: '#7C3AED'
@@ -91,7 +93,7 @@ export default function DespesasPage() {
 
   const openNewModal = () => {
     setEditingExpense(null);
-    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '' });
+    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '', description: '' });
     setShowModal(true);
   };
 
@@ -100,7 +102,8 @@ export default function DespesasPage() {
     setFormData({
       date: expense.date,
       category: expense.category_id || '',
-      amount: String(expense.amount)
+      amount: String(expense.amount),
+      description: expense.description || ''
     });
     setShowModal(true);
   };
@@ -108,7 +111,7 @@ export default function DespesasPage() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingExpense(null);
-    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '' });
+    setFormData({ date: new Date().toISOString().split('T')[0], category: '', amount: '', description: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,7 +126,7 @@ export default function DespesasPage() {
         await updateExpense(editingExpense.id, {
           date: formData.date,
           category_id: formData.category || null,
-          description: editingExpense.description || '',
+          description: (formData as any).description || editingExpense.description || '',
           amount: amountNumber
         });
         setSuccessMessage('Despesa atualizada com sucesso!');
@@ -131,7 +134,7 @@ export default function DespesasPage() {
         await createExpense({
           date: formData.date,
           category_id: formData.category || null,
-          description: '',
+          description: (formData as any).description || '',
           amount: amountNumber
         });
         setSuccessMessage('Despesa salva com sucesso!');
@@ -511,6 +514,16 @@ export default function DespesasPage() {
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#22C55E] text-white text-xs">+</span>
                   </p>
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Descrição (opcional)</label>
+                  <textarea
+                    value={(formData as any).description}
+                    onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Observações adicionais (opcional)"
+                    className="w-full bg-[#0E0B16] border border-white/5 rounded-xl px-4 py-3 text-[#F9FAFB] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm"
+                    rows={3}
+                  />
                 <div>
                   <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Valor</label>
                   <div className="relative">
