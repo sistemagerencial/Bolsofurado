@@ -35,26 +35,18 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           <img
             src="https://static.readdy.ai/image/bf718a2cc4cf5345b9929bb1f487ed03/d897479ec7a02c7e53f2d5e4c64f1a14.png"
             alt="Bolso Furado"
-            className="w-28 h-28 sm:w-36 sm:h-36 object-contain"
-            style={{ filter: 'drop-shadow(0 12px 24px rgba(124,58,237,0.25))', animation: 'scale-in 0.9s cubic-bezier(0.34,1.56,0.64,1) forwards' }}
+            className="w-40 h-40 sm:w-52 sm:h-52 object-contain"
+            style={{ filter: 'drop-shadow(0 18px 36px rgba(124,58,237,0.30))', animation: 'scale-in 0.9s cubic-bezier(0.34,1.56,0.64,1) forwards' }}
           />
         </div>
 
-        {/* Nome */}
-        <div className="flex flex-col items-center gap-1" style={{ animation: 'fade-up 0.7s ease-out 0.3s both' }}>
-          <span className="text-xl font-semibold tracking-wide text-white">
-            Bolso Furado
-          </span>
-          <span className="text-xs tracking-widest uppercase" style={{ color: 'rgba(196,181,253,0.5)' }}>
-            Gestão Financeira
-          </span>
-        </div>
+          {/* Apenas logo grande e barra de progresso */}
+          <div style={{ height: 18 }} />
 
-        {/* Barra de progresso */}
-        <div
-          className="w-32 h-0.5 rounded-full overflow-hidden"
-          style={{ background: 'rgba(255,255,255,0.08)', animation: 'fade-up 0.7s ease-out 0.5s both' }}
-        >
+          <div
+            className="w-48 sm:w-64 h-0.5 rounded-full overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.08)', animation: 'fade-up 0.7s ease-out 0.5s both' }}
+          >
           <div
             className="h-full rounded-full"
             style={{

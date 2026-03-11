@@ -10,13 +10,13 @@
     {
       "src": "https://hzzzoylajeitnvjglyku.supabase.co/storage/v1/object/public/logo/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
       "src": "https://hzzzoylajeitnvjglyku.supabase.co/storage/v1/object/public/logo/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

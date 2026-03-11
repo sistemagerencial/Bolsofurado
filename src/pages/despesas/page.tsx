@@ -718,7 +718,6 @@ export default function DespesasPage() {
                     <span className="text-amber-400">Cadastre uma nova categoria clicando no</span>
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#22C55E] text-white text-xs">+</span>
                   </p>
-                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Descrição (opcional)</label>

@@ -127,6 +127,38 @@ export default function HomePage() {
     return 'Usuário';
   };
 
+  const getFormattedMonth = (ym: string) => {
+    if (!ym) return '';
+    const [yearStr, monthStr] = ym.split('-');
+    const y = Number(yearStr);
+    const m = Number(monthStr) - 1;
+    if (Number.isNaN(y) || Number.isNaN(m)) return ym;
+    const d = new Date(y, m);
+    return d.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+  };
+
+  const formatCurrency = (value: number) => {
+    try {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0));
+    } catch (e) {
+      return `R$ ${Number(value || 0).toFixed(2)}`;
+    }
+  };
+
+  const handlePreviousMonth = () => {
+    const [yearStr, monthStr] = selectedGoalMonth.split('-');
+    const d = new Date(Number(yearStr), Number(monthStr) - 1, 1);
+    d.setMonth(d.getMonth() - 1);
+    setSelectedGoalMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  };
+
+  const handleNextMonth = () => {
+    const [yearStr, monthStr] = selectedGoalMonth.split('-');
+    const d = new Date(Number(yearStr), Number(monthStr) - 1, 1);
+    d.setMonth(d.getMonth() + 1);
+    setSelectedGoalMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  };
+
   const firstName = getDisplayName();
 
   const { revenues, loading: loadingRevenues, createRevenue } = useRevenues();
@@ -152,52 +184,9 @@ export default function HomePage() {
   const receitaCatRef = useRef<HTMLSelectElement>(null);
   const receitaValorRef = useRef<HTMLInputElement>(null);
   const receitaDescRef = useRef<HTMLTextAreaElement>(null);
-        e.preventDefault();
-        const date = despesaDateRef.current?.value;
-        const category_id = despesaCatRef.current?.value;
-        const amount = parseFloat(despesaValorRef.current?.value || '0');
-        if (!date || !category_id || !amount) return;
-        setSavingDespesa(true);
-        try {
-          const description = despesaDescRef.current?.value || '';
-          const type = despesaTypeRef.current?.value || 'normal';
-          if (type === 'parcelado') {
-            const installments = Math.max(1, Number(despesaInstallmentsRef.current?.value) || 1);
-            const entradaNumber = parseFloat((despesaEntradaRef.current?.value || '0').toString().replace(',', '.')) || 0;
-            const restante = Math.max(0, amount - entradaNumber);
-            const base = Math.floor((restante / installments) * 100) / 100;
-            const remainder = Math.round((restante - base * installments) * 100) / 100;
-            if (entradaNumber > 0) {
-              await createExpense({ date, category_id, description: `${description} (entrada)`.trim(), amount: entradaNumber });
-              for (let j = 1; j <= installments; j++) {
-                const d = new Date(date + 'T00:00:00');
-                d.setDate(d.getDate() + 30 * j);
-                const installmentAmount = (j === 1) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
-                await createExpense({ date: d.toISOString().split('T')[0], category_id, description: `${description} (${j}/${installments})`.trim(), amount: installmentAmount });
-              }
-            } else {
-              for (let j = 0; j < installments; j++) {
-                const d = new Date(date + 'T00:00:00');
-                d.setDate(d.getDate() + 30 * j);
-                const installmentAmount = (j === 0) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
-                await createExpense({ date: d.toISOString().split('T')[0], category_id, description: `${description} (${j + 1}/${installments})`.trim(), amount: installmentAmount });
-              }
-            }
-          } else if (type === 'assinatura') {
-            for (let i = 0; i < 12; i++) {
-              const d = new Date(date + 'T00:00:00');
-              d.setDate(d.getDate() + 30 * i);
-              await createExpense({ date: d.toISOString().split('T')[0], category_id, description: description || 'Assinatura', amount });
-            }
-          } else {
-            await createExpense({ date, category_id, description, amount });
-          }
-          setShowDespesaModal(false);
-        } catch (err) {
-          console.error('Erro ao salvar despesa:', err);
-        } finally {
-          setSavingDespesa(false);
-
+  const savingsRef = useRef<HTMLDivElement>(null);
+  const evolutionRef = useRef<HTMLDivElement>(null);
+  
   const getProgressColor = (percentage: number) => {
     if (percentage >= 90) return '#EF4444';
     if (percentage >= 70) return '#FACC15';
