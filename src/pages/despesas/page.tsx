@@ -643,14 +643,13 @@ export default function DespesasPage() {
       {/* Modal - Nova / Editar Despesa */}
       {showModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4"
           onClick={handleCloseModal}
         >
           <div
-            className="relative bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-lg shadow-2xl overflow-y-auto"
+            className="relative bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}
             style={{
-              maxHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 48px)',
               paddingTop: 'env(safe-area-inset-top)',
               paddingBottom: 'env(safe-area-inset-bottom)'
             }}
@@ -681,8 +680,8 @@ export default function DespesasPage() {
                 </button>
               </div>
             </div>
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6">
-              <div className="space-y-4 sm:space-y-5">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 flex-1 flex flex-col">
+              <div className="space-y-4 sm:space-y-5 flex-1 overflow-y-auto" style={{ maxHeight: '60vh' }}>
                 <div>
                   <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Data</label>
                   <input

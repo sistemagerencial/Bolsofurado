@@ -1336,7 +1336,7 @@ export default function HomePage() {
       {/* Modal Nova Despesa */}
       {showDespesaModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 72px)' }} onClick={() => setShowDespesaModal(false)}>
-          <div className="bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-[#16122A] p-6 border-b border-white/10 flex items-center justify-between z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#EF4444]/20 to-[#DC2626]/20 flex items-center justify-center"><i className="ri-subtract-line text-2xl text-[#EF4444]"></i></div>
@@ -1344,8 +1344,9 @@ export default function HomePage() {
               </div>
               <button onClick={() => setShowDespesaModal(false)} className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all cursor-pointer"><i className="ri-close-line text-xl text-[#F9FAFB]"></i></button>
             </div>
-            <div className="p-6">
-              <form className="space-y-5" onSubmit={handleSaveDespesa}>
+            <div className="p-6 flex-1">
+              <form className="flex flex-col h-full" onSubmit={handleSaveDespesa}>
+                <div className="space-y-5" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                 <div><label className="block text-sm font-medium text-[#F9FAFB] mb-2">Data</label><input ref={despesaDateRef} type="date" defaultValue={today} required className="w-full bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] text-sm focus:outline-none focus:border-[#EF4444] transition-all" /></div>
                 <div>
                   <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Categoria</label>
@@ -1408,7 +1409,8 @@ export default function HomePage() {
                 <div id="home-despesa-assinatura-note" style={{ display: 'none' }}>
                   <p className="text-sm text-[#9CA3AF]">Assinatura: serão criados 12 lançamentos mensais a partir da data informada.</p>
                 </div>
-                <div className="flex gap-3 pt-4">
+                </div>
+                <div className="sticky bottom-0 bg-[#16122A] p-4 border-t border-white/10 flex gap-3">
                   <button type="button" onClick={() => setShowDespesaModal(false)} className="flex-1 px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-[#F9FAFB] font-medium transition-all cursor-pointer whitespace-nowrap">Cancelar</button>
                   <button type="submit" disabled={savingDespesa} className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-[#EF4444] to-[#DC2626] hover:from-[#DC2626] hover:to-[#B91C1C] text-white font-semibold transition-all cursor-pointer shadow-lg shadow-[#EF4444]/20 whitespace-nowrap disabled:opacity-60">{savingDespesa ? 'Salvando...' : 'Adicionar'}</button>
                 </div>
