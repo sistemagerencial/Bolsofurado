@@ -46,7 +46,7 @@ export function WelcomeModal({ onClose }: WelcomeModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4">
-      <div className="bg-[#0E0B16] border border-white/10 rounded-3xl w-full max-w-4xl shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-[#0E0B16] border border-white/10 rounded-3xl w-full max-w-4xl shadow-2xl overflow-y-auto" style={{ maxHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px)' }}>
 
         {/* Header */}
         <div className="relative p-8 sm:p-10 text-center border-b border-white/10 bg-gradient-to-br from-[#7C3AED]/10 to-[#EC4899]/10">
@@ -127,7 +127,7 @@ export function WelcomeModal({ onClose }: WelcomeModalProps) {
               </ul>
               <button
                 onClick={() => handleSelectPlan('monthly')}
-                className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] hover:from-[#6D28D9] hover:to-[#5B21B6] text-white font-semibold transition-all cursor-pointer shadow-lg shadow-[#7C3AED]/20 whitespace-nowrap"
+                className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] hover:from-[#6D28D9] hover:to-[#5B21B6] text-white font-semibold transition-all cursor-pointer shadow-lg shadow-[#7C3AED]/20 whitespace-normal break-words"
               >
                 Assinar Mensal
               </button>
@@ -177,7 +177,7 @@ export function WelcomeModal({ onClose }: WelcomeModalProps) {
               </ul>
               <button
                 onClick={() => handleSelectPlan('yearly')}
-                className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#DB2777] hover:from-[#DB2777] hover:to-[#BE185D] text-white font-semibold transition-all cursor-pointer shadow-lg shadow-[#EC4899]/20 whitespace-nowrap"
+                className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#DB2777] hover:from-[#DB2777] hover:to-[#BE185D] text-white font-semibold transition-all cursor-pointer shadow-lg shadow-[#EC4899]/20 whitespace-normal break-words"
               >
                 Assinar Anual
               </button>
@@ -188,7 +188,7 @@ export function WelcomeModal({ onClose }: WelcomeModalProps) {
           <div className="text-center">
             <button
               onClick={handleContinueTrial}
-              className="px-8 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-[#9CA3AF] hover:text-[#F9FAFB] font-medium transition-all cursor-pointer whitespace-nowrap"
+              className="w-full sm:w-auto px-8 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-[#9CA3AF] hover:text-[#F9FAFB] font-medium transition-all cursor-pointer whitespace-normal break-words"
             >
               <i className="ri-time-line mr-2"></i>
               Ficar no teste grátis

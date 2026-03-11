@@ -152,51 +152,51 @@ export default function HomePage() {
   const receitaCatRef = useRef<HTMLSelectElement>(null);
   const receitaValorRef = useRef<HTMLInputElement>(null);
   const receitaDescRef = useRef<HTMLTextAreaElement>(null);
-  const despesaDateRef = useRef<HTMLInputElement>(null);
-  const despesaCatRef = useRef<HTMLSelectElement>(null);
-  const despesaValorRef = useRef<HTMLInputElement>(null);
-  const despesaDescRef = useRef<HTMLTextAreaElement>(null);
-  const despesaTypeRef = useRef<HTMLSelectElement>(null);
-  const despesaInstallmentsRef = useRef<HTMLInputElement>(null);
-  const despesaEntradaRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!showDespesaModal) return;
-    const v = despesaTypeRef.current?.value || 'normal';
-    const parc = document.getElementById('home-despesa-parcelado-fields');
-    const assin = document.getElementById('home-despesa-assinatura-note');
-    if (parc) (parc as HTMLElement).style.display = v === 'parcelado' ? 'grid' : 'none';
-    if (assin) (assin as HTMLElement).style.display = v === 'assinatura' ? 'block' : 'none';
-  }, [showDespesaModal]);
-
-  const colorOptions = ['#22C55E', '#7C3AED', '#EC4899', '#FACC15', '#EF4444', '#8B5CF6', '#10B981', '#F97316'];
-
-  // Refs para carrosséis — forçar scroll para o mês atual (direita)
-  const savingsRef = useRef<HTMLDivElement | null>(null);
-  const evolutionRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => { fetchBudgets(selectedGoalMonth); }, [selectedGoalMonth]);
-
-
-  const handlePreviousMonth = () => {
-    const [year, month] = selectedGoalMonth.split('-').map(Number);
-    const date = new Date(year, month - 1, 1);
-    date.setMonth(date.getMonth() - 1);
-    setSelectedGoalMonth(date.toISOString().slice(0, 7));
-  };
-  const handleNextMonth = () => {
-    const [year, month] = selectedGoalMonth.split('-').map(Number);
-    const date = new Date(year, month - 1, 1);
-    date.setMonth(date.getMonth() + 1);
-    setSelectedGoalMonth(date.toISOString().slice(0, 7));
-  };
-  const getFormattedMonth = (monthStr: string) => {
-    const [year, month] = monthStr.split('-').map(Number);
-    return new Date(year, month - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-  };
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        e.preventDefault();
+        const date = despesaDateRef.current?.value;
+        const category_id = despesaCatRef.current?.value;
+        const amount = parseFloat(despesaValorRef.current?.value || '0');
+        if (!date || !category_id || !amount) return;
+        setSavingDespesa(true);
+        try {
+          const description = despesaDescRef.current?.value || '';
+          const type = despesaTypeRef.current?.value || 'normal';
+          if (type === 'parcelado') {
+            const installments = Math.max(1, Number(despesaInstallmentsRef.current?.value) || 1);
+            const entradaNumber = parseFloat((despesaEntradaRef.current?.value || '0').toString().replace(',', '.')) || 0;
+            const restante = Math.max(0, amount - entradaNumber);
+            const base = Math.floor((restante / installments) * 100) / 100;
+            const remainder = Math.round((restante - base * installments) * 100) / 100;
+            if (entradaNumber > 0) {
+              await createExpense({ date, category_id, description: `${description} (entrada)`.trim(), amount: entradaNumber });
+              for (let j = 1; j <= installments; j++) {
+                const d = new Date(date + 'T00:00:00');
+                d.setDate(d.getDate() + 30 * j);
+                const installmentAmount = (j === 1) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
+                await createExpense({ date: d.toISOString().split('T')[0], category_id, description: `${description} (${j}/${installments})`.trim(), amount: installmentAmount });
+              }
+            } else {
+              for (let j = 0; j < installments; j++) {
+                const d = new Date(date + 'T00:00:00');
+                d.setDate(d.getDate() + 30 * j);
+                const installmentAmount = (j === 0) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
+                await createExpense({ date: d.toISOString().split('T')[0], category_id, description: `${description} (${j + 1}/${installments})`.trim(), amount: installmentAmount });
+              }
+            }
+          } else if (type === 'assinatura') {
+            for (let i = 0; i < 12; i++) {
+              const d = new Date(date + 'T00:00:00');
+              d.setDate(d.getDate() + 30 * i);
+              await createExpense({ date: d.toISOString().split('T')[0], category_id, description: description || 'Assinatura', amount });
+            }
+          } else {
+            await createExpense({ date, category_id, description, amount });
+          }
+          setShowDespesaModal(false);
+        } catch (err) {
+          console.error('Erro ao salvar despesa:', err);
+        } finally {
+          setSavingDespesa(false);
 
   const getProgressColor = (percentage: number) => {
     if (percentage >= 90) return '#EF4444';

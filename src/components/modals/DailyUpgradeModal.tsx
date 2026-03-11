@@ -30,7 +30,7 @@ export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: Da
   if (!isOpen) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -38,9 +38,13 @@ export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: Da
       ></div>
 
       {/* Modal com scroll */}
-      <div className={`relative bg-gradient-to-br from-[#1F2937] to-[#111827] border border-[#374151] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
+      <div className={`relative bg-gradient-to-br from-[#1F2937] to-[#111827] border border-[#374151] rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}
+        style={{
+          maxHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px)'
+        }}
+      >
         {/* Header com gradiente — fixo no topo */}
-        <div className="relative overflow-hidden rounded-t-2xl bg-gradient-to-r from-[#7C3AED] to-[#EC4899] p-8 text-center flex-shrink-0">
+        <div className="relative overflow-hidden rounded-t-2xl bg-gradient-to-r from-[#7C3AED] to-[#EC4899] p-6 text-center flex-shrink-0 sticky top-0 z-10">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-20"></div>
           
           <div className="relative">
@@ -53,7 +57,7 @@ export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: Da
         </div>
 
         {/* Conteúdo com scroll */}
-        <div className="overflow-y-auto flex-1 p-8">
+        <div className="overflow-y-auto flex-1 p-6" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           {/* Benefícios */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             <div className="flex items-start gap-3">
@@ -144,7 +148,8 @@ export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: Da
           {/* Botão Continuar Teste */}
           <button
             onClick={handleContinueTrial}
-            className="w-full bg-[#374151] text-[#F9FAFB] px-6 py-3 rounded-lg font-medium hover:bg-[#4B5563] transition-all duration-300 whitespace-nowrap cursor-pointer"
+            className="w-full bg-[#374151] text-[#F9FAFB] px-6 py-3 rounded-lg font-medium hover:bg-[#4B5563] transition-all duration-300 whitespace-normal cursor-pointer break-words"
+            style={{ wordBreak: 'break-word' }}
           >
             Continuar no teste gratuito ({daysRemaining} {daysRemaining === 1 ? 'dia restante' : 'dias restantes'})
           </button>

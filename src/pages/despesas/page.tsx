@@ -795,24 +795,25 @@ export default function DespesasPage() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-3 sm:gap-4 mt-6 sm:mt-8">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="flex-1 px-4 sm:px-6 py-3 bg-white/5 hover:bg-white/10 text-[#F9FAFB] rounded-xl font-medium transition-all cursor-pointer whitespace-nowrap text-sm sm:text-base"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:shadow-lg hover:shadow-[#7C3AED]/30 text-white rounded-xl font-medium transition-all cursor-pointer whitespace-nowrap text-sm sm:text-base disabled:opacity-50"
-                >
-                  {saving ? 'Salvando...' : editingExpense ? 'Atualizar' : 'Salvar'}
-                </button>
               </div>
+              <div className="sticky bottom-0 bg-[#16122A] p-4 sm:p-6 border-t border-white/10 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    className="flex-1 px-4 sm:px-6 py-3 bg-white/5 hover:bg-white/10 text-[#F9FAFB] rounded-xl font-medium transition-all cursor-pointer whitespace-nowrap text-sm sm:text-base"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:shadow-lg hover:shadow-[#7C3AED]/30 text-white rounded-xl font-medium transition-all cursor-pointer whitespace-nowrap text-sm sm:text-base disabled:opacity-50"
+                  >
+                    {saving ? 'Salvando...' : editingExpense ? 'Atualizar' : 'Salvar'}
+                  </button>
+                </div>
             </form>
-          </div>
+            </div>
         </div>
       )}
 
