@@ -188,12 +188,18 @@ export default function HomePage() {
   const evolutionRef = useRef<HTMLDivElement>(null);
   
   const getProgressColor = (percentage: number) => {
-    if (percentage >= 90) return '#EF4444';
-    if (percentage >= 70) return '#FACC15';
+    if (percentage >= 100) return '#EF4444';
+    if (percentage >= 90) return '#FACC15';
     return '#22C55E';
   };
-  const getStatusColor = (s: string) => s === 'critical' ? '#EF4444' : s === 'warning' ? '#FACC15' : '#22C55E';
-  const getStatusText = (s: string) => s === 'critical' ? 'CRÍTICO' : s === 'warning' ? 'ATENÇÃO' : 'OK';
+
+  const despesaDateRef = useRef<HTMLInputElement>(null);
+  const despesaCatRef = useRef<HTMLSelectElement>(null);
+  const despesaValorRef = useRef<HTMLInputElement>(null);
+  const despesaDescRef = useRef<HTMLTextAreaElement>(null);
+  const despesaTypeRef = useRef<HTMLSelectElement>(null);
+  const despesaInstallmentsRef = useRef<HTMLInputElement>(null);
+  const despesaEntradaRef = useRef<HTMLInputElement>(null);
 
   const totalRevenues = revenues.reduce((sum, rev) => sum + Number(rev.amount), 0);
   const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
@@ -288,6 +294,18 @@ export default function HomePage() {
     if (pct >= 10) return 'Bom';
     if (pct > 0) return 'Atenção';
     return 'Crítico';
+  };
+
+  const getStatusColor = (status: string) => {
+    if (status === 'critical') return '#EF4444';
+    if (status === 'warning') return '#FACC15';
+    return '#22C55E';
+  };
+
+  const getStatusText = (status: string) => {
+    if (status === 'critical') return 'CRÍTICO';
+    if (status === 'warning') return 'ATENÇÃO';
+    return 'OK';
   };
 
   // Sempre rola os carrosséis para a direita (mês atual) quando os dados mudam
