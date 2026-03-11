@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useRevenues } from '../../hooks/useRevenues';
+import { useExpenses } from '../../hooks/useExpenses';
 import { createPortal } from 'react-dom';
 import MainLayout from '../../components/layout/MainLayout';
 import { useInvestments } from '../../hooks/useInvestments';
@@ -171,7 +173,20 @@ export default function InvestimentosPage() {
     current_value: 0,
     purchase_date: new Date().toISOString().split('T')[0],
     notes: '',
+    origin_type: 'aporte',
   });
+
+  // saldo disponível calculado a partir de receitas e despesas
+  const { revenues } = useRevenues();
+  const { expenses, createExpense } = useExpenses();
+  const availableBalance = revenues.reduce((s, r) => s + Number(r.amount || 0), 0) - expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+
+  const [investmentError, setInvestmentError] = useState<string | null>(null);
+  const amountToInvestPreview = (newInvestment.quantity && newInvestment.entry_price)
+    ? Number((newInvestment.quantity * newInvestment.entry_price))
+    : Number(newInvestment.amount || 0);
+
+  const insufficientBalance = (newInvestment as any).origin_type === 'saldo_conta' && amountToInvestPreview > availableBalance;
 
   // Adicionar estados para campos extras de Previdência Privada e Capitalização
   const [previdenciaData, setPrevidenciaData] = useState({
@@ -641,6 +656,7 @@ export default function InvestimentosPage() {
   // ── handlers ──
   const handleCreateInvestment = async () => {
     try {
+      setInvestmentError(null);
       let notesWithExtras = newInvestment.notes;
       
       if (newInvestment.type === 'Previdência Privada') {
@@ -660,16 +676,43 @@ export default function InvestimentosPage() {
         notesWithExtras = `[CONSORCIO]${JSON.stringify(extraData)}${newInvestment.notes ? '\n' + newInvestment.notes : ''}`;
       }
 
+      // determinar valor do aporte (preview used also to validate before submit)
+      const amountToInvest = (newInvestment.quantity && newInvestment.entry_price)
+        ? Number((newInvestment.quantity * newInvestment.entry_price))
+        : Number(newInvestment.amount || 0);
+
+      // se origem for saldo_conta, verificar saldo disponível e criar uma despesa para debitar
+      if ((newInvestment as any).origin_type === 'saldo_conta') {
+        if (amountToInvest > availableBalance) {
+          setInvestmentError('Valor maior que o saldo disponível. Ajuste o valor ou escolha Aporte novo.');
+          return;
+        }
+        // registrar despesa para debitar saldo
+        try {
+          await createExpense({
+            date: newInvestment.purchase_date,
+            category_id: null,
+            description: `Transferência para investimento: ${newInvestment.name}`,
+            amount: amountToInvest
+          });
+        } catch (err) {
+          console.error('Erro ao criar despesa de transferência:', err);
+          setInvestmentError('Erro ao debitar saldo. Tente novamente.');
+          return;
+        }
+      }
+
       await createInvestment({ 
         purchase_date: newInvestment.purchase_date, 
         type: newInvestment.type, 
         name: newInvestment.name, 
         code: newInvestment.code,
         quantity: newInvestment.quantity,
-        amount: 0,
+        amount: amountToInvest,
         entry_price: newInvestment.entry_price, 
         current_value: newInvestment.current_value, 
-        notes: notesWithExtras 
+        notes: notesWithExtras,
+        origin_type: (newInvestment as any).origin_type || 'aporte'
       });
       setShowNewInvestmentModal(false);
       setShowSuccessMessage(true);
@@ -2153,6 +2196,25 @@ export default function InvestimentosPage() {
                 </div>
               </div>
               <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+                {/* Origem do valor do investimento */}
+                <div className="bg-[#0E0B16] rounded-xl p-3 border border-white/5">
+                  <p className="text-sm font-semibold text-[#F9FAFB] mb-2">Origem do valor do investimento</p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="origin" value="aporte" checked={(newInvestment as any).origin_type !== 'saldo_conta'} onChange={() => setNewInvestment(prev => ({ ...prev, origin_type: 'aporte' }))} />
+                      <span className="ml-1">Aporte novo</span>
+                    </label>
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="origin" value="saldo_conta" checked={(newInvestment as any).origin_type === 'saldo_conta'} onChange={() => setNewInvestment(prev => ({ ...prev, origin_type: 'saldo_conta' }))} />
+                      <span className="ml-1">Usar saldo da conta</span>
+                    </label>
+                  </div>
+                  <p className="text-xs text-[#9CA3AF] mt-2">Aporte novo: dinheiro externo que ainda não está na carteira. Saldo da conta: usar dinheiro disponível do saldo positivo.</p>
+                  {(newInvestment as any).origin_type === 'saldo_conta' && (
+                    <p className="text-sm text-[#9CA3AF] mt-2">Saldo disponível: <strong className="text-[#F9FAFB]">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(availableBalance)}</strong></p>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Tipo de Ativo</label>
                   <select value={newInvestment.type} onChange={(e) => { setNewInvestment({ ...newInvestment, type: e.target.value, name: '', code: '' }); setSimpleTermMonths(0); }} className="w-full bg-[#0E0B16] border border-white/5 rounded-xl px-4 py-3 text-[#F9FAFB] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm cursor-pointer">
@@ -2351,11 +2413,17 @@ export default function InvestimentosPage() {
                   </div>
                 )}
 
+                {investmentError && (
+                  <div className="rounded-md bg-[#330410] border border-[#5F1220] p-3 text-sm text-[#FEE2E2]">{investmentError}</div>
+                )}
+                {insufficientBalance && !investmentError && (
+                  <div className="rounded-md bg-[#330410] border border-[#5F1220] p-3 text-sm text-[#FEE2E2]">Valor maior que o saldo disponível.</div>
+                )}
                 <div className="flex gap-3 sm:gap-4 pt-2 pb-2">
                   <button onClick={() => setShowNewInvestmentModal(false)} className="flex-1 px-4 sm:px-6 py-3 bg-white/5 hover:bg-white/10 text-[#F9FAFB] rounded-xl font-medium transition-all cursor-pointer whitespace-nowrap text-sm sm:text-base">Cancelar</button>
                   <button 
                     onClick={handleCreateInvestment} 
-                    disabled={!newInvestment.name || (['Previdência Privada', 'Capitalização', 'Consórcio'].includes(newInvestment.type) && simpleTermMonths <= 0)}
+                    disabled={!newInvestment.name || (['Previdência Privada', 'Capitalização', 'Consórcio'].includes(newInvestment.type) && simpleTermMonths <= 0) || insufficientBalance}
                     className="flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:shadow-lg hover:shadow-[#7C3AED]/30 text-white rounded-xl font-medium transition-all cursor-pointer whitespace-nowrap text-sm sm:text-base disabled:opacity-50"
                   >
                     Adicionar Investimento

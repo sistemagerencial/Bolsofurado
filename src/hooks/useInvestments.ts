@@ -19,6 +19,7 @@ export interface Investment {
   quantity?: number;
   invested?: number;
   average_cost?: number;
+  origin_type?: string | null;
 }
 
 export const useInvestments = () => {
@@ -68,6 +69,7 @@ export const useInvestments = () => {
     notes?: string;
     code?: string;
     quantity?: number;
+    origin_type?: 'aporte' | 'saldo_conta' | string | null;
   }) => {
     try {
       if (!user) throw new Error('Usuário não autenticado');
@@ -125,6 +127,7 @@ export const useInvestments = () => {
             average_cost: averageCost,
             current_value: investmentData.current_value,
             notes: investmentData.notes || null,
+            origin_type: investmentData.origin_type || null,
           }])
           .select()
           .single();
