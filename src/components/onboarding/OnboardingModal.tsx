@@ -171,6 +171,15 @@ export function OnboardingModal({ onClose, onFinish }: OnboardingModalProps) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [currentStep, animating]);
 
+  // Lock body scroll while modal is open to prevent background interaction on mobile
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow || '';
+    };
+  }, []);
+
   const modal = (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-start sm:items-center justify-center z-[200] p-3">
       <div className="bg-[#0E0B16] border border-white/10 rounded-2xl w-full max-w-2xl shadow-xl shadow-black/50 overflow-hidden relative max-h-[90vh]">
