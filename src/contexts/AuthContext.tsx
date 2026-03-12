@@ -149,16 +149,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendWelcomeEmail = async (email: string, name: string) => {
     try {
-      await fetch(
-        `${import.meta.env.VITE_PUBLIC_SUPABASE_URL}/functions/v1/send-welcome-email`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, name }),
-        }
-      );
-    } catch (_e) {
-      // silently ignore welcome email errors
+      // Use supabase.functions.invoke so the request is made with the
+      // client's auth context and proper headers.
+      const { error } = await supabase.functions.invoke('send-welcome-email', {
+        body: JSON.stringify({ email, name }),
+      });
+      if (error) console.warn('sendWelcomeEmail error:', error.message || error);
+    } catch (e) {
+      console.warn('sendWelcomeEmail exception:', (e as Error).message || e);
     }
   };
 
@@ -427,8 +425,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (phone) await sendWhatsAppNotification(phone, name, email);
     }
 
-    // Marca que o welcome deve ser mostrado após confirmação/login
-    localStorage.setItem('bolsofurado_show_welcome_pending', 'true');
+    // Não marcar pending aqui — o `handleSessionChange` gerencia quando
+    // enviar o welcome e criar categorias após a confirmação/login.
   };
 
   const signInWithGoogle = async () => {
