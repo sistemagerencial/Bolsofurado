@@ -151,8 +151,9 @@ export default function PerfilPage() {
   };
 
   const handleAlterarSenha = async () => {
-    if (!senhaData.senhaAtual || !senhaData.novaSenha) {
-      toast.error('Preencha todos os campos de senha.');
+    // Permite definir/alterar senha mesmo para usuários que se registraram via OAuth.
+    if (!senhaData.novaSenha) {
+      toast.error('Digite a nova senha.');
       return;
     }
     if (senhaData.novaSenha !== senhaData.confirmarSenha) {
@@ -165,10 +166,19 @@ export default function PerfilPage() {
     }
     setLoading(true);
     try {
+      // Supabase permite atualizar a senha quando o usuário está autenticado.
       const { error } = await supabase.auth.updateUser({ password: senhaData.novaSenha });
-      if (error) throw error;
+      if (error) {
+        // Se houver erro de autenticação, sugerir usar 'Esqueci a senha'.
+        if ((error.message || '').toString().toLowerCase().includes('invalid')) {
+          toast.error('Não foi possível alterar a senha. Use "Esqueci a senha" para criar uma senha por e-mail.');
+        } else {
+          toast.error('Erro ao alterar senha: ' + (error.message || 'Erro desconhecido'));
+        }
+        return;
+      }
       setSenhaData({ senhaAtual: '', novaSenha: '', confirmarSenha: '' });
-      toast.success('Senha alterada com sucesso!');
+      toast.success('Senha alterada com sucesso! Agora você pode usar e-mail e senha para entrar.');
     } catch (error: any) {
       toast.error('Erro ao alterar senha: ' + (error.message || 'Erro desconhecido'));
     } finally {
