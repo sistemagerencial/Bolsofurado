@@ -16,6 +16,7 @@ interface Profile {
   is_lifetime: boolean;
   is_admin_override: boolean;
   plan_type: string;
+  deleted_at?: string | null;
   created_at?: string;
 }
 
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, phone, avatar_url, is_admin, subscription_status, subscription_expires_at, trial_start_date, trial_end_date, is_lifetime, is_admin_override, plan_type, created_at')
+        .select('id, name, phone, avatar_url, is_admin, subscription_status, subscription_expires_at, trial_start_date, trial_end_date, is_lifetime, is_admin_override, plan_type, deleted_at, created_at')
         .eq('id', userId)
         .maybeSingle();
 
@@ -246,6 +247,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (currentUser) {
       let profileData = await fetchProfile(currentUser.id, currentUser.email ?? '');
+
+      // Se o perfil não existir (usuário autenticou via OAuth mas não tem perfil),
+      // redireciona para a página de cadastro para completar o perfil.
+      if (!profileData) {
+        setProfile(null);
+        // marca carregamento inicial e libera UI antes do redirect
+        if (!initialLoadComplete) setInitialLoadComplete(true);
+        setLoading(false);
+        try {
+          window.location.href = '/registro';
+        } catch {
+          // ignore
+        }
+        return;
+      }
+
+      // Se o perfil estiver marcado como deletado, força sign-out (inclui OAuth)
+      if (profileData && (profileData as any).deleted_at) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setProfile(null);
+        if (!initialLoadComplete) setInitialLoadComplete(true);
+        setLoading(false);
+        return;
+      }
 
       if (profileData) {
         profileData = await ensureProfileName(currentUser.id, currentUser, profileData);
