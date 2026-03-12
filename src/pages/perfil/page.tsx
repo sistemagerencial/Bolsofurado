@@ -186,6 +186,24 @@ export default function PerfilPage() {
     }
   };
 
+  const handleEnviarLinkSenha = async () => {
+    if (!user?.email) {
+      toast.error('E-mail não disponível para envio.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const resetLink = `${window.location.origin}/login`;
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, { redirectTo: resetLink });
+      if (error) throw error;
+      toast.success('Link para criação de senha enviado ao seu e-mail. Verifique a caixa de entrada.');
+    } catch (err: any) {
+      toast.error('Erro ao enviar link: ' + (err.message || 'Erro desconhecido'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const displayName = (() => {
     // Prioriza o que está no formulário (já editado), depois o perfil salvo
     const fromForm = formData.nome?.trim();
@@ -266,6 +284,16 @@ export default function PerfilPage() {
                   )}
                 </div>
               </div>
+            </div>
+
+            <div className="mt-4">
+              <button
+                onClick={handleEnviarLinkSenha}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-white/5 hover:bg-white/10 text-sm text-[#9CA3AF]"
+              >
+                <i className="ri-mail-line"></i>
+                Enviar link para criar/recuperar senha
+              </button>
             </div>
 
             {/* Campos */}
