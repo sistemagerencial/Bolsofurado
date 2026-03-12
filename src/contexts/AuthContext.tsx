@@ -249,18 +249,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let profileData = await fetchProfile(currentUser.id, currentUser.email ?? '');
 
       // Se o perfil não existir (usuário autenticou via OAuth mas não tem perfil),
-      // redireciona para a página de cadastro para completar o perfil.
+      // apenas marca `profile` como null — o fluxo de registro deve lidar com
+      // navegação. Evita redirecionamentos forçados que podem causar loops.
       if (!profileData) {
         setProfile(null);
-        // marca carregamento inicial e libera UI antes do redirect
-        if (!initialLoadComplete) setInitialLoadComplete(true);
-        setLoading(false);
-        try {
-          window.location.href = '/registro';
-        } catch {
-          // ignore
-        }
-        return;
       }
 
       // Se o perfil estiver marcado como deletado, força sign-out (inclui OAuth)
@@ -441,7 +433,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/` },
+      // redireciona para a página de registro quando o usuário vem do OAuth,
+      // assim o usuário sem `profiles` será levado diretamente ao cadastro.
+      options: { redirectTo: `${window.location.origin}/registro` },
     });
     if (error) throw error;
   };
