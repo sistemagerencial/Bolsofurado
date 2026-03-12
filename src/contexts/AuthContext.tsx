@@ -349,8 +349,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+
+    // após autenticar, verificar se existe perfil correspondente e se não está marcado como excluído
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+      if (!userId) {
+        // algo inesperado — desloga apenas por segurança
+        await supabase.auth.signOut();
+        throw new Error('Erro ao verificar usuário. Contate o suporte.');
+      }
+
+      const { data: profileRow, error: profileErr } = await supabase
+        .from('profiles')
+        .select('id, deleted_at')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (profileErr) {
+        await supabase.auth.signOut();
+        throw profileErr;
+      }
+
+      if (!profileRow || profileRow.deleted_at) {
+        // usuário foi removido do banco — desloga e retorna erro amigável
+        await supabase.auth.signOut();
+        throw new Error('Usuário não cadastrado. Por favor, realize o cadastro novamente.');
+      }
+    } catch (e) {
+      // propaga erro para tela de login
+      throw e;
+    }
   };
 
   const signUp = async ({ name, phone, email, password }: { name: string; phone?: string; email: string; password: string }) => {
