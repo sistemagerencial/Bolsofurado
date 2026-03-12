@@ -1,10 +1,11 @@
 import { useState, FormEvent, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 
 export default function RegistroPage() {
-  const { signUp, signInWithGoogle } = useAuthContext();
+  const { signUp, signInWithGoogle, user, refreshProfile } = useAuthContext();
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -89,6 +90,20 @@ export default function RegistroPage() {
     }
   };
 
+  // Prefill fields when user returned from OAuth
+  useEffect(() => {
+    if (!user) return;
+    const metaName =
+      (user.user_metadata as any)?.full_name ||
+      (user.user_metadata as any)?.name ||
+      (user.user_metadata as any)?.given_name ||
+      '';
+    if (!name && metaName) setName(metaName as string);
+    if (!email && user.email) setEmail(user.email);
+    const metaPhone = (user.user_metadata as any)?.phone || '';
+    if (!phone && metaPhone) setPhone(metaPhone);
+  }, [user]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
@@ -104,11 +119,27 @@ export default function RegistroPage() {
 
     setLoading(true);
     try {
+      // Se o usuário já está autenticado (OAuth), apenas cria/atualiza o perfil
+      if (user) {
+        const { error: pErr } = await supabase
+          .from('profiles')
+          .upsert({ id: user.id, name, phone: phone || null })
+          .select();
+
+        if (pErr) throw pErr;
+
+        // Atualiza cache e redireciona para home
+        await refreshProfile();
+        navigate('/', { replace: true });
+        return;
+      }
+
+      // Fluxo normal de signUp por e-mail
       await signUp({ name, phone, email, password });
       setEmailSent(true);
       startCooldown();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro ao criar conta';
+      const msg = err instanceof Error ? err.message : 'Erro ao criar conto';
       if (msg.includes('User already registered')) {
         setError('Este e-mail já está cadastrado.');
       } else {
