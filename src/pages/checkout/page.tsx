@@ -224,7 +224,11 @@ export default function CheckoutPage() {
 
     try {
       // Carregar SDK do Mercado Pago
-      const mpPublicKeyResponse = await supabase.functions.invoke('get-mp-public-key');
+      const sessionResp = await supabase.auth.getSession();
+      const accessToken = sessionResp?.data?.session?.access_token;
+      const mpPublicKeyResponse = await supabase.functions.invoke('get-mp-public-key', {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      });
       
       if (mpPublicKeyResponse.error || !mpPublicKeyResponse.data?.public_key) {
         throw new Error('Erro ao obter chave pública do Mercado Pago');
@@ -266,6 +270,8 @@ export default function CheckoutPage() {
             },
           },
         },
+      }, {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
 
       if (error) {
@@ -440,10 +446,14 @@ export default function CheckoutPage() {
     try {
       setChecking(true);
       
+      const sessionResp2 = await supabase.auth.getSession();
+      const accessToken2 = sessionResp2?.data?.session?.access_token;
       const { data, error } = await supabase.functions.invoke('check-payment-status', {
         body: {
           payment_id: paymentData.id
         }
+      }, {
+        headers: accessToken2 ? { Authorization: `Bearer ${accessToken2}` } : undefined,
       });
 
       if (error) {
@@ -471,11 +481,15 @@ export default function CheckoutPage() {
     setSimulationMode(true);
     
     try {
+      const sessionResp3 = await supabase.auth.getSession();
+      const accessToken3 = sessionResp3?.data?.session?.access_token;
       const { data, error } = await supabase.functions.invoke('simulate-payment', {
         body: {
           payment_id: paymentData.id,
           plan_type: selectedPlan
         }
+      }, {
+        headers: accessToken3 ? { Authorization: `Bearer ${accessToken3}` } : undefined,
       });
 
       if (error) {
