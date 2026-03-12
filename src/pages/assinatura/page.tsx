@@ -176,8 +176,8 @@ export default function AssinaturaPage() {
         </div>
 
         {/* Card do plano atual */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#7C3AED]/20 via-[#16122A] to-[#EC4899]/10 border border-white/10 rounded-2xl p-6 mb-6">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#7C3AED]/10 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+          <div className="relative overflow-hidden bg-gradient-to-br from-[#7C3AED]/20 via-[#16122A] to-[#EC4899]/10 border border-white/10 rounded-2xl p-6 mb-6">
+            <div className="hidden sm:block absolute top-0 right-0 w-64 h-64 bg-[#7C3AED]/10 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
           <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
             {/* Ícone do plano */}
@@ -465,7 +465,7 @@ export default function AssinaturaPage() {
                   </ul>
                   <button
                     onClick={() => navigate(`/checkout?plan=${plan.id}`)}
-                    className={`w-full py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                    className={`w-full py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
                       plan.highlight
                         ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:from-[#6D28D9] hover:to-[#DB2777] text-white shadow-lg shadow-[#7C3AED]/20'
                         : 'bg-white/5 hover:bg-white/10 text-[#F9FAFB]'

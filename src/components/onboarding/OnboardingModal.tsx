@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import Logo from '../logo/Logo';
 
 interface OnboardingStep {
   id: number;
@@ -171,8 +172,8 @@ export function OnboardingModal({ onClose, onFinish }: OnboardingModalProps) {
   }, [currentStep, animating]);
 
   const modal = (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200] p-3">
-      <div className="bg-[#0E0B16] border border-white/10 rounded-2xl w-full max-w-2xl shadow-xl shadow-black/50 overflow-hidden relative">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-start sm:items-center justify-center z-[200] p-3">
+      <div className="bg-[#0E0B16] border border-white/10 rounded-2xl w-full max-w-2xl shadow-xl shadow-black/50 overflow-hidden relative max-h-[90vh]">
 
         {/* Skip button */}
         <button
@@ -182,13 +183,9 @@ export function OnboardingModal({ onClose, onFinish }: OnboardingModalProps) {
           Pular tour
         </button>
 
-        {/* Logo no topo */}
+        {/* Logo no topo (usar Logo do projeto) */}
         <div className="absolute top-3 left-4 z-10 flex items-center gap-2">
-          <img
-            src="https://static.readdy.ai/image/bf718a2cc4cf5345b9929bb1f487ed03/329df8a96fbfb4f61300025c05375e5e.png"
-            alt="Bolso Furado"
-            className="h-8 w-auto object-contain"
-          />
+          <Logo width={120} height={32} showText={false} className="h-8 w-auto" />
         </div>
 
         {/* Step dots */}
