@@ -419,15 +419,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .update({ name, phone: phone || null })
         .eq('id', data.user.id);
-
-      // Cria categorias padrão
-      await createDefaultCategories(data.user.id);
-
+      // Não criar categorias nem enviar e-mail de boas-vindas aqui: o usuário
+      // ainda precisa confirmar o e-mail e terá sessão ativa apenas após
+      // confirmação/login. Essas ações serão tratadas quando a sessão for
+      // estabelecida (veja `handleSessionChange`). Envia notificação WhatsApp
+      // somente se o número foi informado.
       if (phone) await sendWhatsAppNotification(phone, name, email);
     }
 
+    // Marca que o welcome deve ser mostrado após confirmação/login
     localStorage.setItem('bolsofurado_show_welcome_pending', 'true');
-    await sendWelcomeEmail(email, name);
   };
 
   const signInWithGoogle = async () => {
