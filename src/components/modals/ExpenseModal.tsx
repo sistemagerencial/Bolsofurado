@@ -151,13 +151,13 @@ export default function ExpenseModal(props: Props) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4"
-      style={{ paddingTop: 'calc(env(safe-area-inset-top) + 16px)' }}
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-[9999] p-4"
+      style={{ paddingTop: 'calc(env(safe-area-inset-top) + 64px)' }}
       onClick={onClose}
       onWheel={handleOverlayWheel}
     >
       <div ref={wrapperRef} className="bg-[#16122A] border border-white/10 w-full sm:max-w-md shadow-2xl flex flex-col overflow-hidden rounded-none sm:rounded-2xl" style={{ height: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px)' }} onClick={e => e.stopPropagation()}>
-          <div className="sticky top-0 bg-[#16122A] p-6 border-b border-white/10 flex items-center justify-between z-10">
+          <div className="sticky top-0 left-0 right-0 w-full bg-[#16122A] p-6 border-b border-white/10 flex items-center justify-between z-[10000]">
             <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#EF4444]/20 to-[#DC2626]/20 flex items-center justify-center"><i className="ri-subtract-line text-2xl text-[#EF4444]"></i></div>
             <h2 className="text-2xl font-bold text-[#F9FAFB]">{title || (editingId ? 'Editar Despesa' : 'Nova Despesa')}</h2>
