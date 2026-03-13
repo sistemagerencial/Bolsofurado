@@ -284,7 +284,6 @@ export default function CheckoutPage() {
             issuer_id: paymentMethodInfo?.results?.[0]?.issuer?.id ?? undefined,
           },
         },
-      }, {
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
 
@@ -382,6 +381,9 @@ export default function CheckoutPage() {
         cpf: cpf.replace(/\D/g, '').slice(0, 3) + '***'
       });
 
+      const sessionResp = await supabase.auth.getSession();
+      const accessToken = sessionResp?.data?.session?.access_token;
+
       const { data, error } = await supabase.functions.invoke("create-payment", {
         body: {
           user_id: user.id,
@@ -391,7 +393,8 @@ export default function CheckoutPage() {
             email: user.email,
             cpf: cpf
           }
-        }
+        },
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
 
       console.log('EDGE DATA:', data);
