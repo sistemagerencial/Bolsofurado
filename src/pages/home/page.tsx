@@ -176,6 +176,7 @@ export default function HomePage() {
   const [newCategoryModalType, setNewCategoryModalType] = useState<'receita' | 'despesa'>('receita');
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('#22C55E');
+  const colorOptions = ['#7C3AED', '#EC4899', '#22C55E', '#FACC15', '#3B82F6', '#EF4444', '#8B5CF6', '#10B981'];
   const [savingCategory, setSavingCategory] = useState(false);
   const [savingReceita, setSavingReceita] = useState(false);
   const [savingDespesa, setSavingDespesa] = useState(false);
