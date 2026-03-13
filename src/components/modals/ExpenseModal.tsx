@@ -156,7 +156,12 @@ export default function ExpenseModal(props: Props) {
       onClick={onClose}
       onWheel={handleOverlayWheel}
     >
-      <div ref={wrapperRef} className="bg-[#16122A] border border-white/10 w-full sm:max-w-md shadow-2xl flex flex-col overflow-hidden rounded-none sm:rounded-2xl" style={{ height: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px)' }} onClick={e => e.stopPropagation()}>
+      <div
+        ref={wrapperRef}
+        className="bg-[#16122A] border border-white/10 w-full sm:max-w-md shadow-2xl flex flex-col rounded-none sm:rounded-2xl overflow-x-hidden"
+        style={{ height: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px)', touchAction: 'pan-y' as any }}
+        onClick={e => e.stopPropagation()}
+      >
           <div className="sticky top-0 left-0 right-0 w-full bg-[#16122A] p-6 border-b border-white/10 flex items-center justify-between z-[10000]">
             <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#EF4444]/20 to-[#DC2626]/20 flex items-center justify-center"><i className="ri-subtract-line text-2xl text-[#EF4444]"></i></div>
@@ -166,7 +171,16 @@ export default function ExpenseModal(props: Props) {
         </div>
         <div className="p-6 flex-1">
           <form className="flex flex-col h-full" onSubmit={handleSubmit}>
-            <div ref={scrollRef} className="space-y-5 overflow-y-auto overscroll-contain pr-2" style={{ maxHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 140px)', paddingBottom: formData.type === 'parcelado' ? 'calc(env(safe-area-inset-bottom) + 200px)' : 'calc(env(safe-area-inset-bottom) + 96px)' }}>
+            <div
+              ref={scrollRef}
+              className="space-y-5 overflow-y-auto overscroll-contain pr-2"
+              style={{
+                maxHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 140px)',
+                paddingBottom: formData.type === 'parcelado' ? 'calc(env(safe-area-inset-bottom) + 200px)' : 'calc(env(safe-area-inset-bottom) + 96px)',
+                overflowX: 'hidden',
+                WebkitOverflowScrolling: 'touch' as any
+              }}
+            >
               <div>
                 <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Data</label>
                 <input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required className="w-full bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] text-sm focus:outline-none focus:border-[#EF4444] transition-all" />
