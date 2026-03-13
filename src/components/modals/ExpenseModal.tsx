@@ -7,7 +7,7 @@ export type ExpenseFormData = {
   category: string;
   amount: string | number;
   type: 'normal' | 'parcelado' | 'assinatura';
-  installments: number;
+  installments: number | string;
   entrada: string | number;
   description: string;
 };
@@ -35,7 +35,7 @@ export default function ExpenseModal(props: Props) {
     category: initialData?.category || '',
     amount: initialData?.amount || '',
     type: (initialData?.type as any) || 'normal',
-    installments: initialData?.installments || 1,
+    installments: (initialData?.installments ?? '') as any,
     entrada: initialData?.entrada || '',
     description: initialData?.description || ''
   });
@@ -45,7 +45,16 @@ export default function ExpenseModal(props: Props) {
 
   useEffect(() => {
     if (open) {
-      setFormData(prev => ({ ...prev, date: initialData?.date || today, category: initialData?.category || prev.category || '', amount: initialData?.amount || prev.amount || '', type: (initialData?.type as any) || prev.type || 'normal', installments: initialData?.installments || prev.installments || 1, entrada: initialData?.entrada || prev.entrada || '', description: initialData?.description || prev.description || '' }));
+      setFormData(prev => ({
+        ...prev,
+        date: initialData?.date || today,
+        category: initialData?.category || prev.category || '',
+        amount: initialData?.amount || prev.amount || '',
+        type: (initialData?.type as any) || prev.type || 'normal',
+        installments: (initialData?.installments ?? prev.installments ?? '') as any,
+        entrada: initialData?.entrada || prev.entrada || '',
+        description: initialData?.description || prev.description || ''
+      }));
       setTimeout(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0; }, 0);
     }
   }, [open, initialData]);
@@ -111,9 +120,14 @@ export default function ExpenseModal(props: Props) {
       }
       return;
     }
+    // normalize installments to number for saving when parcelado
+    const normalized: ExpenseFormData = {
+      ...formData,
+      installments: formData.type === 'parcelado' ? (parseInt(String(formData.installments)) || 1) : formData.installments
+    } as any;
     setSaving(true);
     try {
-      await onSave(formData, editingId || null);
+      await onSave(normalized, editingId || null);
       onClose();
     } catch (err) {
       console.error('Erro ao salvar despesa (ExpenseModal):', err);
@@ -142,7 +156,7 @@ export default function ExpenseModal(props: Props) {
       onClick={onClose}
       onWheel={handleOverlayWheel}
     >
-      <div ref={wrapperRef} className="bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-md shadow-2xl flex flex-col overflow-hidden" style={{ maxHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px)' }} onClick={e => e.stopPropagation()}>
+      <div ref={wrapperRef} className="bg-[#16122A] border border-white/10 w-full sm:max-w-md shadow-2xl flex flex-col overflow-hidden rounded-none sm:rounded-2xl" style={{ height: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px)' }} onClick={e => e.stopPropagation()}>
           <div className="sticky top-0 bg-[#16122A] p-6 border-b border-white/10 flex items-center justify-between z-10">
             <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#EF4444]/20 to-[#DC2626]/20 flex items-center justify-center"><i className="ri-subtract-line text-2xl text-[#EF4444]"></i></div>
@@ -181,7 +195,7 @@ export default function ExpenseModal(props: Props) {
                     value={formData.type}
                     onChange={e => {
                       const newType = e.target.value as any;
-                      setFormData(prev => ({ ...prev, type: newType }));
+                      setFormData(prev => ({ ...prev, type: newType, installments: newType === 'parcelado' ? '' : prev.installments } as any));
                       setTimeout(() => {
                         const sc = scrollRef.current;
                         if (!sc) return;
@@ -223,7 +237,7 @@ export default function ExpenseModal(props: Props) {
                 <div ref={parceladoRef} className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Número de Parcelas</label>
-                    <input type="number" min={1} value={formData.installments} onChange={e => setFormData({ ...formData, installments: Math.max(1, Number(e.target.value) || 1) })} className="w-full bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] focus:outline-none focus:border-[#EF4444] transition-all text-sm" />
+                    <input type="number" min={1} value={formData.installments as any} onChange={e => setFormData({ ...formData, installments: e.target.value })} className="w-full bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] focus:outline-none focus:border-[#EF4444] transition-all text-sm" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Entrada (opcional)</label>
