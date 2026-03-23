@@ -1,4 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// The function runs on Deno edge runtime; TS in the editor may not resolve ESM imports.
+// @ts-ignore: Deno import
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+
+// Declare Deno for editor TypeScript to avoid "Cannot find name 'Deno'" diagnostics
+declare const Deno: any;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -35,7 +41,7 @@ async function createAlert(supabase: any, discrepancy: PaymentDiscrepancy, reque
       }
     });
   } catch (error) {
-    console.error('Erro ao criar alerta:', error);
+    console.error('Erro ao criar alerta:', formatError(error));
   }
 }
 
@@ -59,7 +65,7 @@ async function getMercadoPagoPayments(accessToken: string, dateFrom: string) {
     const data = await response.json();
     return data.results || [];
   } catch (error) {
-    console.error('Erro ao buscar pagamentos no MP:', error);
+    console.error('Erro ao buscar pagamentos no MP:', formatError(error));
     throw error;
   }
 }
@@ -154,24 +160,25 @@ async function checkDataConsistency(supabase: any): Promise<PaymentDiscrepancy[]
 async function resolveDiscrepancy(supabase: any, discrepancy: PaymentDiscrepancy): Promise<boolean> {
   try {
     switch (discrepancy.type) {
-      case 'missing_history':
+      case 'missing_history': {
         // Para usuários com assinatura ativa mas sem histórico, criar entrada de reconciliação
         const { error: historyError } = await supabase
           .from('payment_history')
           .insert({
             user_id: discrepancy.user_id,
             payment_id: `reconciliation_${Date.now()}`,
-            amount: discrepancy.details.plan_type === 'yearly' ? 59.90 : 9.90,
+            amount: discrepancy.details.plan_type === 'yearly' ? 59.9 : 9.9,
             plan_type: discrepancy.details.plan_type || 'monthly',
             status: 'approved',
             paid_at: new Date().toISOString(),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
-        
-        return !historyError;
 
-      case 'duplicate_payment':
+        return !historyError;
+      }
+
+      case 'duplicate_payment': {
         // Remover pagamentos duplicados mantendo o mais recente
         const { data: duplicatePayments, error: fetchError } = await supabase
           .from('payment_history')
@@ -183,25 +190,26 @@ async function resolveDiscrepancy(supabase: any, discrepancy: PaymentDiscrepancy
         if (fetchError || !duplicatePayments || duplicatePayments.length <= 1) return false;
 
         // Manter o primeiro (mais recente) e remover os outros
-        const toDelete = duplicatePayments.slice(1).map(p => p.id);
+        const toDelete = duplicatePayments.slice(1).map((p: any) => p.id);
         const { error: deleteError } = await supabase
           .from('payment_history')
           .delete()
           .in('id', toDelete);
 
         return !deleteError;
+      }
 
       default:
         return false;
     }
   } catch (error) {
-    console.error(`Erro ao resolver discrepância ${discrepancy.type}:`, error);
+    console.error(`Erro ao resolver discrepância ${discrepancy.type}:`, formatError(error));
     return false;
   }
 }
 
 // Função principal de reconciliação
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
   
@@ -221,7 +229,7 @@ Deno.serve(async (req) => {
       throw new Error('Variáveis de ambiente não configuradas');
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY as string);
     
     // Log início da reconciliação
     await supabase.from('admin_logs').insert({
@@ -311,7 +319,7 @@ Deno.serve(async (req) => {
         }
       }
     } catch (error) {
-      console.log(`⚠️ [${requestId}] Erro ao verificar MP (continuando): ${error.message}`);
+      console.log(`⚠️ [${requestId}] Erro ao verificar MP (continuando): ${formatError(error)}`);
     }
 
     // 4. Verificar assinaturas que devem ter expirado
@@ -328,7 +336,7 @@ Deno.serve(async (req) => {
       discrepanciesFound += shouldBeExpired.length;
 
       // Atualizar status das assinaturas expiradas
-      const expiredIds = shouldBeExpired.map(sub => sub.id);
+      const expiredIds = shouldBeExpired.map((sub: any) => sub.id);
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ subscription_status: 'expired' })
@@ -374,19 +382,25 @@ Deno.serve(async (req) => {
       }
     );
 
-  } catch (error) {
-    console.error(`❌ [${requestId}] Erro na reconciliação:`, error);
-    
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
-        request_id: requestId
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
-  }
+    } catch (error) {
+      console.error(`❌ [${requestId}] Erro na reconciliação:`, formatError(error));
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          request_id: requestId
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 });
+
+// Utility to format unknown errors
+function formatError(e: unknown) {
+  if (e instanceof Error) return e.message;
+  try { return JSON.stringify(e); } catch { return String(e); }
+}
