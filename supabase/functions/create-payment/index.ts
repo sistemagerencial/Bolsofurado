@@ -355,9 +355,9 @@ serve(async (req) => {
           description,
           quantity: 1,
           unit_price: price,
-          currency_id: 'BRL',
         },
       ],
+      currency_id: 'BRL',
       payer: {
         email: user.email,
       },

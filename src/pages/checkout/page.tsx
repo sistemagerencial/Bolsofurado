@@ -468,8 +468,7 @@ export default function CheckoutPage() {
       const { data, error } = await supabase.functions.invoke('check-payment-status', {
         body: {
           payment_id: paymentData.id
-        }
-      }, {
+        },
         headers: accessToken2 ? { Authorization: `Bearer ${accessToken2}` } : undefined,
       });
 
@@ -504,8 +503,7 @@ export default function CheckoutPage() {
         body: {
           payment_id: paymentData.id,
           plan_type: selectedPlan
-        }
-      }, {
+        },
         headers: accessToken3 ? { Authorization: `Bearer ${accessToken3}` } : undefined,
       });
 

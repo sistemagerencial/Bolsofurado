@@ -4,6 +4,7 @@ import MainLayout from '../../components/layout/MainLayout';
 import { useExpenses } from '../../hooks/useExpenses';
 import { useCategories } from '../../hooks/useCategories';
 import type { Expense } from '../../hooks/useExpenses';
+import ExpenseModal from '../../components/modals/ExpenseModal';
 
 export default function DespesasPage() {
   const { expenses, loading: loadingExpenses, createExpense, updateExpense, deleteExpense, deleteExpenseGroup, updateExpenseGroup } = useExpenses();
@@ -290,7 +291,112 @@ export default function DespesasPage() {
     }
   };
 
-    
+  
+  // New save handler to be used by the shared ExpenseModal (accepts data payload)
+  const handleModalSave = async (data: any, editingId?: string | null) => {
+    const amountNumber = parseFloat(
+      typeof data.amount === 'string' ? data.amount.replace(',', '.') : String(data.amount)
+    );
+    if (isNaN(amountNumber) || amountNumber <= 0) return;
+    setSaving(true);
+    try {
+      if (editingExpense) {
+        const isParcel = /\(\d+\/\d+\)/.test(editingExpense.description || '');
+        const isEntrada = /\(entrada\)/i.test(editingExpense.description || '');
+        const isAssinatura = /assinatura/i.test(editingExpense.description || '');
+
+        const payload = {
+          date: data.date,
+          category_id: data.category || null,
+          description: (data as any).description || editingExpense.description || '',
+          amount: amountNumber
+        };
+
+        try {
+          if (isParcel || isAssinatura || isEntrada) {
+            await updateExpenseGroup(editingExpense.id, payload);
+          } else {
+            await updateExpense(editingExpense.id, payload);
+          }
+        } catch (err) {
+          console.error('Erro ao atualizar despesa:', err);
+        }
+
+        setSuccessMessage('Despesa atualizada com sucesso!');
+      } else {
+        const tipo = (data as any).type;
+        if (tipo === 'parcelado') {
+          const installments = Math.max(1, Number((data as any).installments) || 1);
+          const entradaNumber = parseFloat(((data as any).entrada || '').toString().replace(',', '.')) || 0;
+          const restante = Math.max(0, amountNumber - entradaNumber);
+          const base = Math.floor((restante / installments) * 100) / 100;
+          const remainder = Math.round((restante - base * installments) * 100) / 100;
+          if (entradaNumber > 0) {
+            await createExpense({
+              date: data.date,
+              category_id: data.category || null,
+              description: `${(data as any).description || ''} (entrada)`.trim(),
+              amount: entradaNumber
+            });
+            for (let j = 1; j <= installments; j++) {
+              const daysToAdd = 30 * j;
+              const d = new Date(data.date + 'T00:00:00');
+              d.setDate(d.getDate() + daysToAdd);
+              const installmentAmount = (j === 1) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
+              await createExpense({
+                date: d.toISOString().split('T')[0],
+                category_id: data.category || null,
+                description: `${(data as any).description || ''} (${j}/${installments})`.trim(),
+                amount: installmentAmount
+              });
+            }
+          } else {
+            for (let j = 0; j < installments; j++) {
+              const daysToAdd = 30 * j;
+              const d = new Date(data.date + 'T00:00:00');
+              d.setDate(d.getDate() + daysToAdd);
+              const installmentAmount = (j === 0) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
+              await createExpense({
+                date: d.toISOString().split('T')[0],
+                category_id: data.category || null,
+                description: `${(data as any).description || ''} (${j + 1}/${installments})`.trim(),
+                amount: installmentAmount
+              });
+            }
+          }
+          setSuccessMessage('Despesa parcelada salva com sucesso!');
+        } else if (tipo === 'assinatura') {
+          for (let i = 0; i < 12; i++) {
+            const d = new Date(data.date + 'T00:00:00');
+            d.setDate(d.getDate() + 30 * i);
+            await createExpense({
+              date: d.toISOString().split('T')[0],
+              category_id: data.category || null,
+              description: (data as any).description || 'Assinatura',
+              amount: amountNumber
+            });
+          }
+          setSuccessMessage('Assinatura salva (12 meses) com sucesso!');
+        } else {
+          await createExpense({
+            date: data.date,
+            category_id: data.category || null,
+            description: (data as any).description || '',
+            amount: amountNumber
+          });
+          setSuccessMessage('Despesa salva com sucesso!');
+        }
+      }
+      handleCloseModal();
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error('Erro ao salvar despesa:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirmDeleteId) return;
     setDeleting(true);
@@ -640,180 +746,17 @@ export default function DespesasPage() {
         </div>
       )}
 
-      {/* Modal - Nova / Editar Despesa */}
-      {showModal && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4"
-          onClick={handleCloseModal}
-        >
-          <div
-            className="relative bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col"
-            onClick={e => e.stopPropagation()}
-            style={{
-              paddingTop: 'env(safe-area-inset-top)',
-              paddingBottom: 'env(safe-area-inset-bottom)'
-            }}
-          >
-            {/* Floating new button inside modal (resets form to new) */}
-            <button
-              onClick={(e) => { e.stopPropagation(); openNewModal(); }}
-              className="absolute top-4 right-4 w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-[#7C3AED] to-[#EC4899] rounded-full shadow-2xl shadow-[#7C3AED]/30 flex items-center justify-center hover:scale-105 transition-all cursor-pointer z-50"
-              title="Nova despesa"
-            >
-              <i className="ri-add-line text-lg lg:text-2xl text-white"></i>
-            </button>
-            <div className="border-b border-white/5 p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#7C3AED]/15 flex items-center justify-center">
-                    <i className={`${editingExpense ? 'ri-pencil-line' : 'ri-add-line'} text-lg text-[#7C3AED]`}></i>
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-[#F9FAFB]">
-                    {editingExpense ? 'Editar Despesa' : 'Nova Despesa'}
-                  </h2>
-                </div>
-                <button
-                  onClick={handleCloseModal}
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all cursor-pointer"
-                >
-                  <i className="ri-close-line text-lg sm:text-xl text-[#F9FAFB]"></i>
-                </button>
-              </div>
-            </div>
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 flex-1 flex flex-col">
-              <div className="space-y-4 sm:space-y-5 flex-1 overflow-y-auto" style={{ maxHeight: '60vh' }}>
-                <div>
-                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Data</label>
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={e => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full bg-[#0E0B16] border border-white/5 rounded-xl px-4 py-3 text-[#F9FAFB] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Categoria</label>
-                  <div className="flex gap-2">
-                    <select
-                      value={formData.category}
-                      onChange={e => setFormData({ ...formData, category: e.target.value })}
-                      className="flex-1 bg-[#0E0B16] border border-white/5 rounded-xl px-4 py-3 text-[#F9FAFB] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm cursor-pointer"
-                    >
-                      <option value="">Selecione uma categoria</option>
-                      {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => setShowCategoryModal(true)}
-                      className="w-12 h-12 bg-[#7C3AED]/20 hover:bg-[#7C3AED]/30 rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0"
-                    >
-                      <i className="ri-add-line text-xl text-[#7C3AED]"></i>
-                    </button>
-                  </div>
-                  <p className="text-xs mt-1 flex items-center gap-2">
-                    <span className="text-amber-400">Cadastre uma nova categoria clicando no</span>
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#22C55E] text-white text-xs">+</span>
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Descrição (opcional)</label>
-                  <textarea
-                    value={(formData as any).description}
-                    onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Observações adicionais (opcional)"
-                    className="w-full bg-[#0E0B16] border border-white/5 rounded-xl px-4 py-3 text-[#F9FAFB] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm"
-                    rows={3}
-                  />
-                <div>
-                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Valor</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]">R$</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      value={formData.amount}
-                      onChange={e => setFormData({ ...formData, amount: e.target.value })}
-                      placeholder="0,00"
-                      className="w-full bg-[#0E0B16] border border-white/5 rounded-xl pl-12 pr-4 py-3 text-[#F9FAFB] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Tipo</label>
-                  <div className="flex gap-2">
-                    <select
-                      value={(formData as any).type}
-                      onChange={e => setFormData({ ...formData, type: e.target.value })}
-                      className="flex-1 bg-[#0E0B16] border border-white/5 rounded-xl px-4 py-3 text-[#F9FAFB] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm cursor-pointer"
-                    >
-                      <option value="normal">Normal</option>
-                      <option value="parcelado">Parcelado</option>
-                      <option value="assinatura">Assinatura</option>
-                    </select>
-                  </div>
-                </div>
-
-                {(formData as any).type === 'parcelado' && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Número de Parcelas</label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={(formData as any).installments}
-                        onChange={e => setFormData({ ...formData, installments: Number(e.target.value) })}
-                        className="w-full bg-[#0E0B16] border border-white/5 rounded-xl px-4 py-3 text-[#F9FAFB] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Entrada (opcional)</label>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]">R$</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={(formData as any).entrada}
-                          onChange={e => setFormData({ ...formData, entrada: e.target.value })}
-                          className="w-full bg-[#0E0B16] border border-white/5 rounded-xl pl-12 pr-4 py-3 text-[#F9FAFB] placeholder-[#9CA3AF] focus:outline-none focus:border-[#7C3AED]/50 transition-all text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {(formData as any).type === 'assinatura' && (
-                  <div>
-                    <p className="text-sm text-[#9CA3AF]">Assinatura: serão criados 12 lançamentos mensais a partir da data informada.</p>
-                  </div>
-                )}
-              </div>
-              </div>
-              <div className="sticky bottom-0 bg-[#16122A] p-4 sm:p-6 border-t border-white/10 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 px-4 sm:px-6 py-3 bg-white/5 hover:bg-white/10 text-[#F9FAFB] rounded-xl font-medium transition-all cursor-pointer whitespace-nowrap text-sm sm:text-base"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:shadow-lg hover:shadow-[#7C3AED]/30 text-white rounded-xl font-medium transition-all cursor-pointer whitespace-nowrap text-sm sm:text-base disabled:opacity-50"
-                  >
-                    {saving ? 'Salvando...' : editingExpense ? 'Atualizar' : 'Salvar'}
-                  </button>
-                </div>
-            </form>
-            </div>
-        </div>
-      )}
+        {/* Modal - Nova / Editar Despesa (shared) */}
+        <ExpenseModal
+          open={showModal}
+          onClose={handleCloseModal}
+          onSave={handleModalSave}
+          onAddCategory={() => setShowCategoryModal(true)}
+          categories={categories}
+          initialData={formData}
+          editingId={editingExpense ? editingExpense.id : null}
+          title={editingExpense ? 'Editar Despesa' : 'Nova Despesa'}
+        />
 
       {/* Modal - Nova Categoria */}
       {showCategoryModal && (

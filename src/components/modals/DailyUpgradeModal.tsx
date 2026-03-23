@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface DailyUpgradeModalProps {
   isOpen: boolean;
@@ -8,6 +8,8 @@ interface DailyUpgradeModalProps {
 
 export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: DailyUpgradeModalProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -15,6 +17,39 @@ export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: Da
     } else {
       setIsVisible(false);
     }
+  }, [isOpen]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev || ''; };
+  }, [isOpen]);
+
+  // Ensure wheel events scroll the modal content (not the page)
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    const el = scrollRef.current;
+    if (!wrapper || !el) return;
+    const onWheel = (e: WheelEvent) => {
+      const target = e.target as Node | null;
+      if (!target || !wrapper.contains(target)) return;
+      const delta = e.deltaY;
+      const atTop = el.scrollTop === 0;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+      if ((delta < 0 && !atTop) || (delta > 0 && !atBottom)) {
+        e.preventDefault();
+        e.stopPropagation();
+        el.scrollTop += delta;
+      }
+    };
+    window.addEventListener('wheel', onWheel as any, { passive: false, capture: true });
+    wrapper.addEventListener('wheel', onWheel as any, { passive: false });
+    return () => {
+      window.removeEventListener('wheel', onWheel as any, { capture: true } as any);
+      wrapper.removeEventListener('wheel', onWheel as any);
+    };
   }, [isOpen]);
 
   const handleContinueTrial = () => {
@@ -30,7 +65,7 @@ export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: Da
   if (!isOpen) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+    <div ref={wrapperRef} className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -38,10 +73,12 @@ export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: Da
       ></div>
 
       {/* Modal com scroll */}
-      <div className={`relative bg-gradient-to-br from-[#1F2937] to-[#111827] border border-[#374151] rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}
+      <div
+        className={`relative bg-gradient-to-br from-[#1F2937] to-[#111827] border border-[#374151] rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}
         style={{
           maxHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px)'
         }}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header com gradiente — fixo no topo */}
         <div className="overflow-hidden rounded-t-2xl bg-gradient-to-r from-[#7C3AED] to-[#EC4899] p-6 text-center flex-shrink-0 sticky top-0 z-10">
@@ -57,7 +94,7 @@ export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: Da
         </div>
 
         {/* Conteúdo com scroll */}
-        <div className="overflow-y-auto flex-1 p-6" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div ref={scrollRef} className="overflow-y-auto flex-1 p-6" style={{ paddingBottom: 'env(safe-area-inset-bottom)', WebkitOverflowScrolling: 'touch' }}>
           {/* Benefícios */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             <div className="flex items-start gap-3">

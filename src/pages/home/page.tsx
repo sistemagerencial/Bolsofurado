@@ -11,6 +11,7 @@ import { useTrades } from '../../hooks/useTrades';
 import { useSubscription } from '../../hooks/useSubscription';
 import { WelcomeModal } from '../../components/modals/WelcomeModal';
 import { OnboardingModal } from '../../components/onboarding/OnboardingModal';
+import ExpenseModal from '../../components/modals/ExpenseModal';
 import { useNavigate } from 'react-router-dom';
 
 const SECTION_IDS = {
@@ -178,6 +179,15 @@ export default function HomePage() {
   const [newCategoryColor, setNewCategoryColor] = useState('#22C55E');
   const colorOptions = ['#7C3AED', '#EC4899', '#22C55E', '#FACC15', '#3B82F6', '#EF4444', '#8B5CF6', '#10B981'];
   const [savingCategory, setSavingCategory] = useState(false);
+  useEffect(() => {
+    if (showDespesaModal) {
+      // Prevent background from scrolling when expense modal is open
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = prev || ''; };
+    }
+    return;
+  }, [showDespesaModal]);
   const [savingReceita, setSavingReceita] = useState(false);
   const [savingDespesa, setSavingDespesa] = useState(false);
 
@@ -406,6 +416,56 @@ export default function HomePage() {
       setShowDespesaModal(false);
     } catch (err) {
       console.error('Erro ao salvar despesa:', err);
+    } finally {
+      setSavingDespesa(false);
+    }
+  };
+
+  // Wrapper for the shared ExpenseModal that accepts structured data
+  const handleHomeModalSave = async (data: any) => {
+    const date = data.date;
+    const category_id = data.category;
+    const amount = parseFloat(String(data.amount || '0')) || 0;
+    if (!date || !category_id || !amount) return;
+    setSavingDespesa(true);
+    try {
+      const description = data.description || '';
+      const type = data.type || 'normal';
+      if (type === 'parcelado') {
+        const installments = Math.max(1, Number(data.installments) || 1);
+        const entradaNumber = parseFloat((data.entrada || '0').toString().replace(',', '.')) || 0;
+        const restante = Math.max(0, amount - entradaNumber);
+        const base = Math.floor((restante / installments) * 100) / 100;
+        const remainder = Math.round((restante - base * installments) * 100) / 100;
+
+        if (entradaNumber > 0) {
+          await createExpense({ date, category_id, description: `${description} (entrada)`.trim(), amount: entradaNumber });
+          for (let j = 1; j <= installments; j++) {
+            const d = new Date(date + 'T00:00:00');
+            d.setDate(d.getDate() + 30 * j);
+            const installmentAmount = (j === 1) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
+            await createExpense({ date: d.toISOString().split('T')[0], category_id, description: `${description} (${j}/${installments})`.trim(), amount: installmentAmount });
+          }
+        } else {
+          for (let j = 0; j < installments; j++) {
+            const d = new Date(date + 'T00:00:00');
+            d.setDate(d.getDate() + 30 * j);
+            const installmentAmount = (j === 0) ? +(base + remainder).toFixed(2) : +base.toFixed(2);
+            await createExpense({ date: d.toISOString().split('T')[0], category_id, description: `${description} (${j + 1}/${installments})`.trim(), amount: installmentAmount });
+          }
+        }
+      } else if (type === 'assinatura') {
+        for (let i = 0; i < 12; i++) {
+          const d = new Date(date + 'T00:00:00');
+          d.setDate(d.getDate() + 30 * i);
+          await createExpense({ date: d.toISOString().split('T')[0], category_id, description: description || 'Assinatura', amount });
+        }
+      } else {
+        await createExpense({ date, category_id, description, amount });
+      }
+      setShowDespesaModal(false);
+    } catch (err) {
+      console.error('Erro ao salvar despesa (home):', err);
     } finally {
       setSavingDespesa(false);
     }
@@ -1334,92 +1394,15 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Modal Nova Despesa */}
-      {showDespesaModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 72px)' }} onClick={() => setShowDespesaModal(false)}>
-          <div className="bg-[#16122A] rounded-2xl border border-white/10 w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-[#16122A] p-6 border-b border-white/10 flex items-center justify-between z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#EF4444]/20 to-[#DC2626]/20 flex items-center justify-center"><i className="ri-subtract-line text-2xl text-[#EF4444]"></i></div>
-                <h2 className="text-2xl font-bold text-[#F9FAFB]">Nova Despesa</h2>
-              </div>
-              <button onClick={() => setShowDespesaModal(false)} className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all cursor-pointer"><i className="ri-close-line text-xl text-[#F9FAFB]"></i></button>
-            </div>
-            <div className="p-6 flex-1">
-              <form className="flex flex-col h-full" onSubmit={handleSaveDespesa}>
-                <div className="space-y-5" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-                <div><label className="block text-sm font-medium text-[#F9FAFB] mb-2">Data</label><input ref={despesaDateRef} type="date" defaultValue={today} required className="w-full bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] text-sm focus:outline-none focus:border-[#EF4444] transition-all" /></div>
-                <div>
-                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Categoria</label>
-                  <div className="flex gap-2">
-                    <select ref={despesaCatRef} required className="flex-1 bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] text-sm focus:outline-none focus:border-[#EF4444] transition-all cursor-pointer">
-                      {categoriasDespesa.length === 0 ? <option value="">Nenhuma categoria cadastrada</option> : categoriasDespesa.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                    <button type="button" onClick={() => openNewCategoryModal('despesa')} className="w-12 h-12 rounded-lg bg-[#EF4444]/20 hover:bg-[#EF4444]/30 flex items-center justify-center transition-all cursor-pointer flex-shrink-0"><i className="ri-add-line text-xl text-[#EF4444]"></i></button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Descrição (opcional)</label>
-                  <textarea ref={despesaDescRef} placeholder="Observações adicionais (opcional)" className="w-full bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#EF4444] transition-all" rows={3} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Valor</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">R$</span>
-                    <input ref={despesaValorRef} type="number" step="0.01" min="0.01" placeholder="0,00" required className="w-full bg-[#0E0B16] border border-white/10 rounded-lg pl-12 pr-4 py-3 text-[#F9FAFB] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#EF4444] transition-all" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Tipo</label>
-                  <div className="flex gap-2">
-                    <select
-                      ref={despesaTypeRef}
-                      defaultValue="normal"
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        const parc = document.getElementById('home-despesa-parcelado-fields');
-                        const assin = document.getElementById('home-despesa-assinatura-note');
-                        if (parc) (parc as HTMLElement).style.display = v === 'parcelado' ? 'grid' : 'none';
-                        if (assin) (assin as HTMLElement).style.display = v === 'assinatura' ? 'block' : 'none';
-                      }}
-                      className="flex-1 bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] text-sm focus:outline-none focus:border-[#EF4444] transition-all cursor-pointer"
-                    >
-                      <option value="normal">Normal</option>
-                      <option value="parcelado">Parcelado</option>
-                      <option value="assinatura">Assinatura</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Parcelado fields */}
-                <div id="home-despesa-parcelado-fields" className="grid grid-cols-2 gap-3" style={{ display: 'none' }}>
-                  <div>
-                    <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Número de Parcelas</label>
-                    <input ref={despesaInstallmentsRef} type="number" min={1} defaultValue={1} className="w-full bg-[#0E0B16] border border-white/10 rounded-lg px-4 py-3 text-[#F9FAFB] focus:outline-none focus:border-[#EF4444] transition-all text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[#F9FAFB] mb-2">Entrada (opcional)</label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">R$</span>
-                      <input ref={despesaEntradaRef} type="number" step="0.01" min="0" defaultValue={0} className="w-full bg-[#0E0B16] border border-white/10 rounded-lg pl-12 pr-4 py-3 text-[#F9FAFB] text-sm focus:outline-none focus:border-[#EF4444] transition-all" />
-                    </div>
-                  </div>
-                </div>
-
-                <div id="home-despesa-assinatura-note" style={{ display: 'none' }}>
-                  <p className="text-sm text-[#9CA3AF]">Assinatura: serão criados 12 lançamentos mensais a partir da data informada.</p>
-                </div>
-                </div>
-                <div className="sticky bottom-0 bg-[#16122A] p-4 border-t border-white/10 flex gap-3">
-                  <button type="button" onClick={() => setShowDespesaModal(false)} className="flex-1 px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-[#F9FAFB] font-medium transition-all cursor-pointer whitespace-nowrap">Cancelar</button>
-                  <button type="submit" disabled={savingDespesa} className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-[#EF4444] to-[#DC2626] hover:from-[#DC2626] hover:to-[#B91C1C] text-white font-semibold transition-all cursor-pointer shadow-lg shadow-[#EF4444]/20 whitespace-nowrap disabled:opacity-60">{savingDespesa ? 'Salvando...' : 'Adicionar'}</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal Nova Despesa (shared) */}
+      <ExpenseModal
+        open={showDespesaModal}
+        onClose={() => setShowDespesaModal(false)}
+        onSave={handleHomeModalSave}
+        onAddCategory={() => openNewCategoryModal('despesa')}
+        categories={categoriasDespesa}
+        initialData={{ date: today, category: '', amount: '', type: 'normal', installments: 1, entrada: '', description: '' }}
+      />
 
       {/* Modal Nova Categoria */}
       {showNewCategoryModal && (
