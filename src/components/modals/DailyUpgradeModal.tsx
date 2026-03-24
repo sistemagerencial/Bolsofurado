@@ -56,7 +56,7 @@ export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: Da
     onClose();
   };
 
-  const handleUpgrade = (plan: 'monthly' | 'annual') => {
+  const handleUpgrade = (plan: 'monthly' | 'yearly') => {
     // Redirecionar para página de assinatura com o plano selecionado
     window.REACT_APP_NAVIGATE(`/assinatura?plan=${plan}`);
     onClose();
@@ -161,7 +161,7 @@ export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: Da
 
             {/* Plano Anual - Destaque */}
             <button
-              onClick={() => handleUpgrade('annual')}
+              onClick={() => handleUpgrade('yearly')}
               className="group relative bg-gradient-to-br from-[#7C3AED]/20 to-[#EC4899]/20 border-2 border-[#7C3AED] rounded-xl p-6 hover:shadow-lg hover:shadow-[#7C3AED]/30 transition-all duration-300 text-left cursor-pointer"
             >
               <div className="absolute -top-3 right-4 bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white text-xs font-bold px-3 py-1 rounded-full">
