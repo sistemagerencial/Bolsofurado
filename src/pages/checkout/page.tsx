@@ -1,3 +1,5 @@
+export default function CheckoutPage() {
+
   // Processar pagamento com cartão (substituído pelo snippet do usuário)
   const handleCardPayment = async () => {
     try {
