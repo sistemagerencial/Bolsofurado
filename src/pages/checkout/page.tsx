@@ -1,104 +1,68 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
-import CardForm from '@/components/checkout/CardForm';
+  // Processar pagamento com cartão (substituído pelo snippet do usuário)
+  const handleCardPayment = async () => {
+    try {
+      setIsProcessingCard(true);
 
-interface PaymentData {
-  id: string;
-  qr_code?: string;
-  qr_code_base64?: string;
-  ticket_url?: string;
-  external_reference?: string;
-}
+      // obter sessão e chave pública do MP
+      const sessionResp = await supabase.auth.getSession();
+      const accessToken = sessionResp?.data?.session?.access_token;
+      const mpPublicKeyResponse = await supabase.functions.invoke('get-mp-public-key', {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      });
 
-interface Profile {
-  id: string;
-  full_name?: string;
-  email: string;
-}
+      if (mpPublicKeyResponse.error || !mpPublicKeyResponse.data?.public_key) {
+        console.error(mpPublicKeyResponse.error || 'Chave pública MP ausente');
+        alert('Erro ao obter chave pública do Mercado Pago');
+        return;
+      }
 
-interface Plan {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  period: string;
-  badge?: string;
-  features: string[];
-}
+      const publicKey = mpPublicKeyResponse.data.public_key;
 
-const plans: Plan[] = [
-  {
-    id: 'monthly',
-    name: 'Plano Mensal',
-    description: 'Ideal para começar',
-    price: 19.90,
-    period: 'mês',
-    features: [
-      'Controle completo de finanças',
-      'Relatórios detalhados',
-      'Calculadoras financeiras',
-      'Planejamento de orçamento',
-      'Suporte prioritário'
-    ]
-  },
-  {
-    id: 'yearly',
-    name: 'Plano Anual',
-    description: 'Melhor custo-benefício',
-    price: 199.00,
-    period: 'ano',
-    badge: 'Mais Popular',
-    features: [
-      'Tudo do plano mensal',
-      'Economia de R$ 39,80',
-      'Recursos exclusivos',
-      'Backup automático',
-      'Suporte VIP 24/7'
-    ]
-  }
-];
+      const mp = new (window as any).MercadoPago(publicKey, { locale: 'pt-BR' });
 
-export default function CheckoutPage() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [searchParams] = useSearchParams();
-  const planType = searchParams.get('plan') || 'monthly';
-  
-  const [step, setStep] = useState<'select' | 'payment' | 'processing'>('select');
-  const [loading, setLoading] = useState(false);
-  const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
-  const [timeLeft, setTimeLeft] = useState(900); // 15 minutos
-  const [checking, setChecking] = useState(false);
-  const [simulationMode, setSimulationMode] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(planType);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
-  const [checkAttempts, setCheckAttempts] = useState(0);
-  const [cpf, setCpf] = useState('');
-  const [cpfError, setCpfError] = useState('');
-  const maxCheckAttempts = 60; // 5 minutos verificando
+      // CRIA TOKEN DO CARTÃO (ESSENCIAL)
+      const cardToken = await mp.createCardToken({
+        cardNumber: cardNumber.replace(/\s/g, ''),
+        cardholderName: cardName,
+        cardExpirationMonth: cardExpMonth,
+        cardExpirationYear: cardExpYear,
+        securityCode: cardCvv,
+        identificationType: 'CPF',
+        identificationNumber: cardCpf.replace(/\D/g, ''),
+      });
 
-  // Novos estados para cartão de crédito
-  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit_card'>('pix');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardName, setCardName] = useState('');
-  const [cardExpMonth, setCardExpMonth] = useState('');
-  const [cardExpYear, setCardExpYear] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-  const [cardCpf, setCardCpf] = useState('');
-  const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
-  const [isProcessingCard, setIsProcessingCard] = useState(false);
+      console.log('TOKEN GERADO:', cardToken);
 
-  const selectedPlanData = plans.find(p => p.id === selectedPlan);
+      // ENVIA PARA SUA EDGE FUNCTION
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          user_id: user?.id,
+          plan: selectedPlan,
+          payment_method: 'credit_card',
+          token: cardToken.id,
+          payer: {
+            email: user?.email,
+            cpf: cardCpf.replace(/\D/g, ''),
+          },
+        },
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      });
 
-  // Carregar perfil do usuário
-  useEffect(() => {
-    if (user) {
-      loadProfile();
+      if (error) {
+        console.error(error);
+        alert('Erro ao processar pagamento');
+        return;
+      }
+
+      alert('Pagamento enviado! Aguarde confirmação.');
+
+    } catch (err) {
+      console.error('Erro cartão:', err);
+      alert('Erro no cartão');
+    } finally {
+      setIsProcessingCard(false);
     }
-  }, [user]);
+  };
 
   // Timer countdown
   useEffect(() => {
@@ -214,117 +178,7 @@ export default function CheckoutPage() {
   };
 
   // Processar pagamento com cartão
-  const handleCardPayment = async () => {
-    if (!user || !selectedPlanData) return;
-
-    if (!validateCardFields()) {
-      return;
-    }
-
-    setIsProcessingCard(true);
-
-    try {
-      // Carregar SDK do Mercado Pago
-      const sessionResp = await supabase.auth.getSession();
-      const accessToken = sessionResp?.data?.session?.access_token;
-      const mpPublicKeyResponse = await supabase.functions.invoke('get-mp-public-key', {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-      });
-      
-      if (mpPublicKeyResponse.error || !mpPublicKeyResponse.data?.public_key) {
-        throw new Error('Erro ao obter chave pública do Mercado Pago');
-      }
-
-      const publicKey = mpPublicKeyResponse.data.public_key;
-
-      // Criar token do cartão usando SDK do Mercado Pago
-      const mp = new (window as any).MercadoPago(publicKey);
-      
-      const cardToken = await mp.createCardToken({
-        cardNumber: cardNumber.replace(/\s/g, ''),
-        cardholderName: cardName,
-        cardExpirationMonth: cardExpMonth,
-        cardExpirationYear: cardExpYear,
-        securityCode: cardCvv,
-        identificationType: 'CPF',
-        identificationNumber: cardCpf.replace(/\D/g, ''),
-      });
-
-      if (!cardToken?.id) {
-        throw new Error('Erro ao gerar token do cartão');
-      }
-
-      // Identificar BIN (6 primeiros dígitos) e obter método de pagamento
-      const bin = cardNumber.replace(/\s/g, '').substring(0, 6);
-      let paymentMethodInfo: any = null;
-      try {
-        paymentMethodInfo = await mp.getPaymentMethod({ bin });
-      } catch (err) {
-        console.warn('Erro ao obter informações do método de pagamento:', err);
-      }
-
-      // Enviar pagamento para a edge function
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: {
-          user_id: user.id,
-          plan: selectedPlan,
-          payment_method: 'credit_card',
-          token: cardToken.id,
-          installments: 1,
-          payer: {
-            email: user.email,
-            first_name: cardName.split(' ')[0],
-            last_name: cardName.split(' ').slice(1).join(' '),
-            identification: {
-              type: 'CPF',
-              number: cardCpf.replace(/\D/g, ''),
-            },
-            // Campos adicionados para compatibilidade com o backend
-            payment_method_id: paymentMethodInfo?.results?.[0]?.id ?? undefined,
-            issuer_id: paymentMethodInfo?.results?.[0]?.issuer?.id ?? undefined,
-          },
-        },
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Erro ao processar pagamento');
-      }
-
-      // Verificar status do pagamento
-      if (data?.status === 'approved') {
-        // Pagamento aprovado - redirecionar para dashboard
-        navigate('/?payment=success');
-      } else if (data?.status === 'pending' || data?.status === 'in_process') {
-        // Pagamento pendente
-        alert('Pagamento em análise. Você receberá uma notificação quando for aprovado.');
-        navigate('/assinatura');
-      } else if (data?.status === 'rejected') {
-        // Pagamento rejeitado
-        const statusDetail = data?.status_detail || '';
-        let errorMsg = 'Pagamento recusado. ';
-        
-        if (statusDetail.includes('cc_rejected_insufficient_amount')) {
-          errorMsg += 'Saldo insuficiente no cartão.';
-        } else if (statusDetail.includes('cc_rejected_bad_filled')) {
-          errorMsg += 'Verifique os dados do cartão.';
-        } else if (statusDetail.includes('cc_rejected_call_for_authorize')) {
-          errorMsg += 'Entre em contato com seu banco para autorizar.';
-        } else {
-          errorMsg += 'Tente outro cartão ou forma de pagamento.';
-        }
-        
-        alert(errorMsg);
-      } else {
-        throw new Error(data?.error || 'Erro desconhecido ao processar pagamento');
-      }
-    } catch (error) {
-      console.error('Erro ao processar cartão:', error);
-      alert(error instanceof Error ? error.message : 'Erro ao processar pagamento com cartão');
-    } finally {
-      setIsProcessingCard(false);
-    }
-  };
+  
 
   const formatCpf = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 11);
