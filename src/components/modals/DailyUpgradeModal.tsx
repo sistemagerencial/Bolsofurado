@@ -74,9 +74,10 @@ export default function DailyUpgradeModal({ isOpen, onClose, daysRemaining }: Da
 
       {/* Modal com scroll */}
       <div
-        className={`relative bg-gradient-to-br from-[#1F2937] to-[#111827] border border-[#374151] rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}
+        className={`relative flex flex-col bg-gradient-to-br from-[#1F2937] to-[#111827] border border-[#374151] rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}
         style={{
-          maxHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px)'
+          height: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px)',
+          touchAction: 'pan-y'
         }}
         onClick={e => e.stopPropagation()}
       >
