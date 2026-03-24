@@ -194,12 +194,13 @@ serve(async (req) => {
 </html>`;
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    
+
     if (!resendApiKey) {
-      console.error('RESEND_API_KEY não configurada');
+      console.warn('RESEND_API_KEY não configurada — pulando envio de email');
+      // Não bloquear o fluxo de cadastro apenas por falta de chave de email
       return new Response(
-        JSON.stringify({ error: 'Configuração de email não disponível' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, message: 'Configuração de email não disponível, email não enviado', email, userName }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
