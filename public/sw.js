@@ -1,4 +1,5 @@
-const CACHE_NAME = 'bolsofurado-v2';
+// Use a dynamic cache name so new deployments automatically rotate the cache
+const CACHE_NAME = 'bolsofurado-' + Date.now();
 
 // Apenas o essencial para funcionar offline
 const APP_SHELL = [
